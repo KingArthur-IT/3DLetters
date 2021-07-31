@@ -76171,19 +76171,19 @@ void main() {
 	let objectsArray = [];
 
 	class App {
-		init() {
+	    init() {
 	        canvas = document.getElementById('main3DCanvas');
 	        canvas.width = window.innerWidth;
 	        canvas.height = window.innerHeight;
-			canvas.setAttribute('width', 	window.innerWidth);
+	        canvas.setAttribute('width', window.innerWidth);
 	        canvas.setAttribute('height', window.innerHeight);
-			
-			//scene and camera
-			scene = new Scene();
-			camera = new PerspectiveCamera(40.0, window.innerWidth / window.innerHeight, 0.1, 5000);
+
+	        //scene and camera
+	        scene = new Scene();
+	        camera = new PerspectiveCamera(40.0, window.innerWidth / window.innerHeight, 0.1, 5000);
 	        camera.position.set(0, 0, 100);
-	        
-			//light
+
+	        //light
 	        light = new PointLight(0xffffff, 0.2);
 	        light.position.set(0, 50, 60);
 	        scene.add(light);
@@ -76191,98 +76191,99 @@ void main() {
 	        light2.position.set(0, 100, 100);
 	        scene.add(light2);
 
-	/*
-	        objectsArray.push(new MeshObj(
-	            new Vector3(10, 10, 10),
-	            0xf7f7f7,
-	            new Vector3(0.0, 0.4, -0.5),
-	            new Vector3(0.0, 20.0, 0.0),
-	            new Vector3(0.0, 1.0, 0.0)
-	        ));
-	        objectsArray.forEach(element => {
-	            scene.add(element.mesh)
-	        });*/
+	        /*
+	                objectsArray.push(new MeshObj(
+	                    new Vector3(10, 10, 10),
+	                    0xf7f7f7,
+	                    new Vector3(0.0, 0.4, -0.5),
+	                    new Vector3(0.0, 20.0, 0.0),
+	                    new Vector3(0.0, 1.0, 0.0)
+	                ));
+	                objectsArray.forEach(element => {
+	                    scene.add(element.mesh)
+	                });*/
 
 	        const materialExtr = new MeshPhongMaterial({ color: 0xf7f7f7 });
-	        
-	        const loader = new FontLoader();
-	        loader.load('Arial_Regular.json', function ( font ) {
 
-	            const geometry = new TextGeometry( 'QWERTA', {
+	        const loader = new FontLoader();
+	        //Arial_Regular
+	        loader.load('Cera Pro Thin_Regular.json', function (font) {
+
+	            const geometry = new TextGeometry('QWERTA', {
 	                font: font,
-	                size: 20,
+	                size: 16,
 	                height: 1,
-	                curveSegments: 12,
+	                curveSegments: 100,
 	                bevelEnabled: true,
 	                bevelThickness: 0.5,
-	                bevelSize: 0.2,
-	                bevelOffset: 0,
-	                bevelSegments: 8
+	                bevelSize: 0.5,
+	                bevelOffset: 0.0,
+	                bevelSegments: 10
 	            });
-	            
+
 	            let mesh = new Mesh(geometry, materialExtr);
 	            mesh.position.set(-60, 0, 0);
 	            mesh.scale.set(1.0, 1.1, 1.0);
-	            scene.add(mesh);     
+	            scene.add(mesh);
 	        });
-	        
+
 	        let shape = new Shape();
 	        let eps = 0.000001;
 	        let radius0 = 1;
 	        let width = 10;
 	        let height = 10;
 	        let radius = radius0 - eps;
-	        shape.absarc( eps, eps, eps, -Math.PI / 2, -Math.PI, true );
-	        shape.absarc( eps, height -  radius * 2, eps, Math.PI, Math.PI / 2, true );
-	        shape.absarc( width - radius * 2, height -  radius * 2, eps, Math.PI / 2, 0, true );
+	        shape.absarc(eps, eps, eps, -Math.PI / 2, -Math.PI, true);
+	        shape.absarc(eps, height - radius * 2, eps, Math.PI, Math.PI / 2, true);
+	        shape.absarc(width - radius * 2, height - radius * 2, eps, Math.PI / 2, 0, true);
 	        shape.absarc(width - radius * 2, eps, eps, 0, -Math.PI / 2, true);
-	        
+
 	        const geometry2 = new ShapeGeometry(shape);
 	        new Mesh(geometry2, materialExtr);
 	        //scene.add(mesh2)     
-	        
+
 	        const roundedRectShape = new Shape$1();
-	        ( function roundedRect( ctx, x, y, width, height, radius ) {
+	        (function roundedRect(ctx, x, y, width, height, radius) {
 
-	            ctx.moveTo( x, y + radius );
-	            ctx.lineTo( x, y + height - radius );
-	            ctx.quadraticCurveTo( x, y + height, x + radius, y + height );
-	            ctx.lineTo( x + width - radius, y + height );
-	            ctx.quadraticCurveTo( x + width, y + height, x + width, y + height - radius );
-	            ctx.lineTo( x + width, y + radius );
-	            ctx.quadraticCurveTo( x + width, y, x + width - radius, y );
-	            ctx.lineTo( x + radius, y );
-	            ctx.quadraticCurveTo( x, y, x, y + radius );
+	            ctx.moveTo(x, y + radius);
+	            ctx.lineTo(x, y + height - radius);
+	            ctx.quadraticCurveTo(x, y + height, x + radius, y + height);
+	            ctx.lineTo(x + width - radius, y + height);
+	            ctx.quadraticCurveTo(x + width, y + height, x + width, y + height - radius);
+	            ctx.lineTo(x + width, y + radius);
+	            ctx.quadraticCurveTo(x + width, y, x + width - radius, y);
+	            ctx.lineTo(x + radius, y);
+	            ctx.quadraticCurveTo(x, y, x, y + radius);
 
-	        } )( roundedRectShape, 0, 0, 10, 10, 5 );
+	        })(roundedRectShape, 0, 0, 10, 10, 5);
 
 	        // solid line
-	        
+
 	        //line.scale.set( 5, 5, 5 );
 	        //scene.add( line );
 
 	        roundedRectShape.autoClose = true;
 
 	        const points = roundedRectShape.getPoints();
-	        const spacedPoints = roundedRectShape.getSpacedPoints( 50 );
+	        const spacedPoints = roundedRectShape.getSpacedPoints(50);
 
-	        const geometryPoints = new BufferGeometry$1().setFromPoints( points );
+	        const geometryPoints = new BufferGeometry$1().setFromPoints(points);
 	        new BufferGeometry$1().setFromPoints(spacedPoints);
-	        
+
 	        new Line(geometryPoints, new LineBasicMaterial({ color: 0xf7f7f7, linewidth: 1 }));
 	        //scene.add( line );
 
-			renderer = new WebGLRenderer({ canvas: canvas, antialias: true });
-			renderer.setClearColor(0xffffff);
+	        renderer = new WebGLRenderer({ canvas: canvas, antialias: true });
+	        renderer.setClearColor(0xffffff);
 
-			renderer.render(scene, camera);
+	        renderer.render(scene, camera);
 	        window.addEventListener('resize', onWindowResize, false);
 	        onWindowResize();
-			window.addEventListener('mousemove', onMouseMove, false);
-			window.addEventListener('scroll', onScroll, false);
+	        window.addEventListener('mousemove', onMouseMove, false);
+	        window.addEventListener('scroll', onScroll, false);
 
-			animate();
-		}
+	        animate();
+	    }
 	}
 
 	function onMouseMove(e) {
@@ -76299,27 +76300,27 @@ void main() {
 	function onWindowResize() {
 	    canvas.width = document.documentElement.clientWidth;//window.innerWidth;
 	    canvas.height = document.documentElement.clientHeight; //window.innerHeight;
-	    canvas.setAttribute('width', 	document.documentElement.clientWidth);
+	    canvas.setAttribute('width', document.documentElement.clientWidth);
 	    canvas.setAttribute('height', document.documentElement.clientHeight);
 
 	    camera.aspect = document.documentElement.clientWidth / document.documentElement.clientHeight;
 	    camera.updateProjectionMatrix();
 
 	    renderer.setSize(document.documentElement.clientWidth, document.documentElement.clientHeight);
-	    
+
 	    let size = document.documentElement.clientWidth < 500 ? document.documentElement.clientWidth < 400 ? 160 : 120 : 100;
-	    
+
 	    objectsArray.forEach(element => {
 	        //element.mesh.scale.copy( new Vector3(size, size, size));
 	        element.mesh.position.copy(element.startPosition);
 	    });
-	    
+
 	    camera.position.set(0, 0, size);
 	}
 
 	function animate() {
-		requestAnimationFrame(animate);
-		renderer.render(scene, camera);
+	    requestAnimationFrame(animate);
+	    renderer.render(scene, camera);
 	}
 
 	function onScroll(e) {
