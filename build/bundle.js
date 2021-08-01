@@ -266,6 +266,8 @@
 
 	}
 
+	let _seed = 1234567;
+
 
 	const DEG2RAD$1 = Math.PI / 180;
 	const RAD2DEG$1 = 180 / Math.PI;
@@ -301,10 +303,115 @@
 
 	}
 
+	// Linear mapping from range <a1, a2> to range <b1, b2>
+	function mapLinear( x, a1, a2, b1, b2 ) {
+
+		return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
+
+	}
+
+	// https://www.gamedev.net/tutorials/programming/general-and-gameplay-programming/inverse-lerp-a-super-useful-yet-often-overlooked-function-r5230/
+	function inverseLerp( x, y, value ) {
+
+		if ( x !== y ) {
+
+			return ( value - x ) / ( y - x );
+
+			 } else {
+
+			return 0;
+
+			 }
+
+	}
+
 	// https://en.wikipedia.org/wiki/Linear_interpolation
 	function lerp$1( x, y, t ) {
 
 		return ( 1 - t ) * x + t * y;
+
+	}
+
+	// http://www.rorydriscoll.com/2016/03/07/frame-rate-independent-damping-using-lerp/
+	function damp( x, y, lambda, dt ) {
+
+		return lerp$1( x, y, 1 - Math.exp( - lambda * dt ) );
+
+	}
+
+	// https://www.desmos.com/calculator/vcsjnyz7x4
+	function pingpong( x, length = 1 ) {
+
+		return length - Math.abs( euclideanModulo$1( x, length * 2 ) - length );
+
+	}
+
+	// http://en.wikipedia.org/wiki/Smoothstep
+	function smoothstep( x, min, max ) {
+
+		if ( x <= min ) return 0;
+		if ( x >= max ) return 1;
+
+		x = ( x - min ) / ( max - min );
+
+		return x * x * ( 3 - 2 * x );
+
+	}
+
+	function smootherstep( x, min, max ) {
+
+		if ( x <= min ) return 0;
+		if ( x >= max ) return 1;
+
+		x = ( x - min ) / ( max - min );
+
+		return x * x * x * ( x * ( x * 6 - 15 ) + 10 );
+
+	}
+
+	// Random integer from <low, high> interval
+	function randInt( low, high ) {
+
+		return low + Math.floor( Math.random() * ( high - low + 1 ) );
+
+	}
+
+	// Random float from <low, high> interval
+	function randFloat( low, high ) {
+
+		return low + Math.random() * ( high - low );
+
+	}
+
+	// Random float from <-range/2, range/2> interval
+	function randFloatSpread( range ) {
+
+		return range * ( 0.5 - Math.random() );
+
+	}
+
+	// Deterministic pseudo-random float in the interval [ 0, 1 ]
+	function seededRandom( s ) {
+
+		if ( s !== undefined ) _seed = s % 2147483647;
+
+		// Park-Miller algorithm
+
+		_seed = _seed * 16807 % 2147483647;
+
+		return ( _seed - 1 ) / 2147483646;
+
+	}
+
+	function degToRad( degrees ) {
+
+		return degrees * DEG2RAD$1;
+
+	}
+
+	function radToDeg( radians ) {
+
+		return radians * RAD2DEG$1;
 
 	}
 
@@ -314,11 +421,99 @@
 
 	}
 
+	function ceilPowerOfTwo( value ) {
+
+		return Math.pow( 2, Math.ceil( Math.log( value ) / Math.LN2 ) );
+
+	}
+
 	function floorPowerOfTwo$1( value ) {
 
 		return Math.pow( 2, Math.floor( Math.log( value ) / Math.LN2 ) );
 
 	}
+
+	function setQuaternionFromProperEuler( q, a, b, c, order ) {
+
+		// Intrinsic Proper Euler Angles - see https://en.wikipedia.org/wiki/Euler_angles
+
+		// rotations are applied to the axes in the order specified by 'order'
+		// rotation by angle 'a' is applied first, then by angle 'b', then by angle 'c'
+		// angles are in radians
+
+		const cos = Math.cos;
+		const sin = Math.sin;
+
+		const c2 = cos( b / 2 );
+		const s2 = sin( b / 2 );
+
+		const c13 = cos( ( a + c ) / 2 );
+		const s13 = sin( ( a + c ) / 2 );
+
+		const c1_3 = cos( ( a - c ) / 2 );
+		const s1_3 = sin( ( a - c ) / 2 );
+
+		const c3_1 = cos( ( c - a ) / 2 );
+		const s3_1 = sin( ( c - a ) / 2 );
+
+		switch ( order ) {
+
+			case 'XYX':
+				q.set( c2 * s13, s2 * c1_3, s2 * s1_3, c2 * c13 );
+				break;
+
+			case 'YZY':
+				q.set( s2 * s1_3, c2 * s13, s2 * c1_3, c2 * c13 );
+				break;
+
+			case 'ZXZ':
+				q.set( s2 * c1_3, s2 * s1_3, c2 * s13, c2 * c13 );
+				break;
+
+			case 'XZX':
+				q.set( c2 * s13, s2 * s3_1, s2 * c3_1, c2 * c13 );
+				break;
+
+			case 'YXY':
+				q.set( s2 * c3_1, c2 * s13, s2 * s3_1, c2 * c13 );
+				break;
+
+			case 'ZYZ':
+				q.set( s2 * s3_1, s2 * c3_1, c2 * s13, c2 * c13 );
+				break;
+
+			default:
+				console.warn( 'THREE.MathUtils: .setQuaternionFromProperEuler() encountered an unknown order: ' + order );
+
+		}
+
+	}
+
+	var MathUtils = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		DEG2RAD: DEG2RAD$1,
+		RAD2DEG: RAD2DEG$1,
+		generateUUID: generateUUID$1,
+		clamp: clamp$1,
+		euclideanModulo: euclideanModulo$1,
+		mapLinear: mapLinear,
+		inverseLerp: inverseLerp,
+		lerp: lerp$1,
+		damp: damp,
+		pingpong: pingpong,
+		smoothstep: smoothstep,
+		smootherstep: smootherstep,
+		randInt: randInt,
+		randFloat: randFloat,
+		randFloatSpread: randFloatSpread,
+		seededRandom: seededRandom,
+		degToRad: degToRad,
+		radToDeg: radToDeg,
+		isPowerOfTwo: isPowerOfTwo$1,
+		ceilPowerOfTwo: ceilPowerOfTwo,
+		floorPowerOfTwo: floorPowerOfTwo$1,
+		setQuaternionFromProperEuler: setQuaternionFromProperEuler
+	});
 
 	class Vector2$1 {
 
@@ -3991,10 +4186,10 @@
 
 				}
 
-				_box$3.copy( geometry.boundingBox );
-				_box$3.applyMatrix4( object.matrixWorld );
+				_box$3$1.copy( geometry.boundingBox );
+				_box$3$1.applyMatrix4( object.matrixWorld );
 
-				this.union( _box$3 );
+				this.union( _box$3$1 );
 
 			}
 
@@ -4256,7 +4451,7 @@
 
 	const _vector$b = /*@__PURE__*/ new Vector3$1();
 
-	const _box$3 = /*@__PURE__*/ new Box3$1();
+	const _box$3$1 = /*@__PURE__*/ new Box3$1();
 
 	// triangle centered vertices
 
@@ -11827,7 +12022,7 @@
 
 	Plane$1.prototype.isPlane = true;
 
-	const _sphere$2 = /*@__PURE__*/ new Sphere$1();
+	const _sphere$2$1 = /*@__PURE__*/ new Sphere$1();
 	const _vector$7 = /*@__PURE__*/ new Vector3$1();
 
 	class Frustum$1 {
@@ -11893,19 +12088,19 @@
 
 			if ( geometry.boundingSphere === null ) geometry.computeBoundingSphere();
 
-			_sphere$2.copy( geometry.boundingSphere ).applyMatrix4( object.matrixWorld );
+			_sphere$2$1.copy( geometry.boundingSphere ).applyMatrix4( object.matrixWorld );
 
-			return this.intersectsSphere( _sphere$2 );
+			return this.intersectsSphere( _sphere$2$1 );
 
 		}
 
 		intersectsSprite( sprite ) {
 
-			_sphere$2.center.set( 0, 0, 0 );
-			_sphere$2.radius = 0.7071067811865476;
-			_sphere$2.applyMatrix4( sprite.matrixWorld );
+			_sphere$2$1.center.set( 0, 0, 0 );
+			_sphere$2$1.radius = 0.7071067811865476;
+			_sphere$2$1.applyMatrix4( sprite.matrixWorld );
 
-			return this.intersectsSphere( _sphere$2 );
+			return this.intersectsSphere( _sphere$2$1 );
 
 		}
 
@@ -26780,7 +26975,7 @@
 
 	InterleavedBuffer.prototype.isInterleavedBuffer = true;
 
-	const _vector$6 = /*@__PURE__*/ new Vector3$1();
+	const _vector$6$1 = /*@__PURE__*/ new Vector3$1();
 
 	class InterleavedBufferAttribute {
 
@@ -26818,13 +27013,13 @@
 
 			for ( let i = 0, l = this.data.count; i < l; i ++ ) {
 
-				_vector$6.x = this.getX( i );
-				_vector$6.y = this.getY( i );
-				_vector$6.z = this.getZ( i );
+				_vector$6$1.x = this.getX( i );
+				_vector$6$1.y = this.getY( i );
+				_vector$6$1.z = this.getZ( i );
 
-				_vector$6.applyMatrix4( m );
+				_vector$6$1.applyMatrix4( m );
 
-				this.setXYZ( i, _vector$6.x, _vector$6.y, _vector$6.z );
+				this.setXYZ( i, _vector$6$1.x, _vector$6$1.y, _vector$6$1.z );
 
 			}
 
@@ -26836,13 +27031,13 @@
 
 			for ( let i = 0, l = this.count; i < l; i ++ ) {
 
-				_vector$6.x = this.getX( i );
-				_vector$6.y = this.getY( i );
-				_vector$6.z = this.getZ( i );
+				_vector$6$1.x = this.getX( i );
+				_vector$6$1.y = this.getY( i );
+				_vector$6$1.z = this.getZ( i );
 
-				_vector$6.applyNormalMatrix( m );
+				_vector$6$1.applyNormalMatrix( m );
 
-				this.setXYZ( i, _vector$6.x, _vector$6.y, _vector$6.z );
+				this.setXYZ( i, _vector$6$1.x, _vector$6$1.y, _vector$6$1.z );
 
 			}
 
@@ -26854,13 +27049,13 @@
 
 			for ( let i = 0, l = this.count; i < l; i ++ ) {
 
-				_vector$6.x = this.getX( i );
-				_vector$6.y = this.getY( i );
-				_vector$6.z = this.getZ( i );
+				_vector$6$1.x = this.getX( i );
+				_vector$6$1.y = this.getY( i );
+				_vector$6$1.z = this.getZ( i );
 
-				_vector$6.transformDirection( m );
+				_vector$6$1.transformDirection( m );
 
-				this.setXYZ( i, _vector$6.x, _vector$6.y, _vector$6.z );
+				this.setXYZ( i, _vector$6$1.x, _vector$6$1.y, _vector$6$1.z );
 
 			}
 
@@ -27885,8 +28080,8 @@
 
 	Line.prototype.isLine = true;
 
-	const _start = /*@__PURE__*/ new Vector3$1();
-	const _end = /*@__PURE__*/ new Vector3$1();
+	const _start$2 = /*@__PURE__*/ new Vector3$1();
+	const _end$2 = /*@__PURE__*/ new Vector3$1();
 
 	class LineSegments extends Line {
 
@@ -27913,11 +28108,11 @@
 
 					for ( let i = 0, l = positionAttribute.count; i < l; i += 2 ) {
 
-						_start.fromBufferAttribute( positionAttribute, i );
-						_end.fromBufferAttribute( positionAttribute, i + 1 );
+						_start$2.fromBufferAttribute( positionAttribute, i );
+						_end$2.fromBufferAttribute( positionAttribute, i + 1 );
 
 						lineDistances[ i ] = ( i === 0 ) ? 0 : lineDistances[ i - 1 ];
-						lineDistances[ i + 1 ] = lineDistances[ i ] + _start.distanceTo( _end );
+						lineDistances[ i + 1 ] = lineDistances[ i ] + _start$2.distanceTo( _end$2 );
 
 					}
 
@@ -28350,7 +28545,7 @@
 	 *
 	 **/
 
-	class Curve$1 {
+	class Curve {
 
 		constructor() {
 
@@ -28730,7 +28925,7 @@
 
 	}
 
-	class EllipseCurve$1 extends Curve$1 {
+	class EllipseCurve extends Curve {
 
 		constructor( aX = 0, aY = 0, xRadius = 1, yRadius = 1, aStartAngle = 0, aEndAngle = Math.PI * 2, aClockwise = false, aRotation = 0 ) {
 
@@ -28880,9 +29075,9 @@
 
 	}
 
-	EllipseCurve$1.prototype.isEllipseCurve = true;
+	EllipseCurve.prototype.isEllipseCurve = true;
 
-	class ArcCurve$1 extends EllipseCurve$1 {
+	class ArcCurve extends EllipseCurve {
 
 		constructor( aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise ) {
 
@@ -28894,7 +29089,7 @@
 
 	}
 
-	ArcCurve$1.prototype.isArcCurve = true;
+	ArcCurve.prototype.isArcCurve = true;
 
 	/**
 	 * Centripetal CatmullRom Curve - which is useful for avoiding
@@ -28916,7 +29111,7 @@
 	which can be placed in CurveUtils.
 	*/
 
-	function CubicPoly$1() {
+	function CubicPoly() {
 
 		let c0 = 0, c1 = 0, c2 = 0, c3 = 0;
 
@@ -28973,10 +29168,10 @@
 
 	//
 
-	const tmp$1 = new Vector3$1();
-	const px$1 = new CubicPoly$1(), py$1 = new CubicPoly$1(), pz$1 = new CubicPoly$1();
+	const tmp = new Vector3$1();
+	const px = new CubicPoly(), py = new CubicPoly(), pz = new CubicPoly();
 
-	class CatmullRomCurve3$1 extends Curve$1 {
+	class CatmullRomCurve3 extends Curve {
 
 		constructor( points = [], closed = false, curveType = 'centripetal', tension = 0.5 ) {
 
@@ -29022,8 +29217,8 @@
 			} else {
 
 				// extrapolate first point
-				tmp$1.subVectors( points[ 0 ], points[ 1 ] ).add( points[ 0 ] );
-				p0 = tmp$1;
+				tmp.subVectors( points[ 0 ], points[ 1 ] ).add( points[ 0 ] );
+				p0 = tmp;
 
 			}
 
@@ -29037,8 +29232,8 @@
 			} else {
 
 				// extrapolate last point
-				tmp$1.subVectors( points[ l - 1 ], points[ l - 2 ] ).add( points[ l - 1 ] );
-				p3 = tmp$1;
+				tmp.subVectors( points[ l - 1 ], points[ l - 2 ] ).add( points[ l - 1 ] );
+				p3 = tmp;
 
 			}
 
@@ -29055,22 +29250,22 @@
 				if ( dt0 < 1e-4 ) dt0 = dt1;
 				if ( dt2 < 1e-4 ) dt2 = dt1;
 
-				px$1.initNonuniformCatmullRom( p0.x, p1.x, p2.x, p3.x, dt0, dt1, dt2 );
-				py$1.initNonuniformCatmullRom( p0.y, p1.y, p2.y, p3.y, dt0, dt1, dt2 );
-				pz$1.initNonuniformCatmullRom( p0.z, p1.z, p2.z, p3.z, dt0, dt1, dt2 );
+				px.initNonuniformCatmullRom( p0.x, p1.x, p2.x, p3.x, dt0, dt1, dt2 );
+				py.initNonuniformCatmullRom( p0.y, p1.y, p2.y, p3.y, dt0, dt1, dt2 );
+				pz.initNonuniformCatmullRom( p0.z, p1.z, p2.z, p3.z, dt0, dt1, dt2 );
 
 			} else if ( this.curveType === 'catmullrom' ) {
 
-				px$1.initCatmullRom( p0.x, p1.x, p2.x, p3.x, this.tension );
-				py$1.initCatmullRom( p0.y, p1.y, p2.y, p3.y, this.tension );
-				pz$1.initCatmullRom( p0.z, p1.z, p2.z, p3.z, this.tension );
+				px.initCatmullRom( p0.x, p1.x, p2.x, p3.x, this.tension );
+				py.initCatmullRom( p0.y, p1.y, p2.y, p3.y, this.tension );
+				pz.initCatmullRom( p0.z, p1.z, p2.z, p3.z, this.tension );
 
 			}
 
 			point.set(
-				px$1.calc( weight ),
-				py$1.calc( weight ),
-				pz$1.calc( weight )
+				px.calc( weight ),
+				py.calc( weight ),
+				pz.calc( weight )
 			);
 
 			return point;
@@ -29143,14 +29338,14 @@
 
 	}
 
-	CatmullRomCurve3$1.prototype.isCatmullRomCurve3 = true;
+	CatmullRomCurve3.prototype.isCatmullRomCurve3 = true;
 
 	/**
 	 * Bezier Curves formulas obtained from
 	 * http://en.wikipedia.org/wiki/Bézier_curve
 	 */
 
-	function CatmullRom$1( t, p0, p1, p2, p3 ) {
+	function CatmullRom( t, p0, p1, p2, p3 ) {
 
 		const v0 = ( p2 - p0 ) * 0.5;
 		const v1 = ( p3 - p1 ) * 0.5;
@@ -29162,68 +29357,68 @@
 
 	//
 
-	function QuadraticBezierP0$1( t, p ) {
+	function QuadraticBezierP0( t, p ) {
 
 		const k = 1 - t;
 		return k * k * p;
 
 	}
 
-	function QuadraticBezierP1$1( t, p ) {
+	function QuadraticBezierP1( t, p ) {
 
 		return 2 * ( 1 - t ) * t * p;
 
 	}
 
-	function QuadraticBezierP2$1( t, p ) {
+	function QuadraticBezierP2( t, p ) {
 
 		return t * t * p;
 
 	}
 
-	function QuadraticBezier$1( t, p0, p1, p2 ) {
+	function QuadraticBezier( t, p0, p1, p2 ) {
 
-		return QuadraticBezierP0$1( t, p0 ) + QuadraticBezierP1$1( t, p1 ) +
-			QuadraticBezierP2$1( t, p2 );
+		return QuadraticBezierP0( t, p0 ) + QuadraticBezierP1( t, p1 ) +
+			QuadraticBezierP2( t, p2 );
 
 	}
 
 	//
 
-	function CubicBezierP0$1( t, p ) {
+	function CubicBezierP0( t, p ) {
 
 		const k = 1 - t;
 		return k * k * k * p;
 
 	}
 
-	function CubicBezierP1$1( t, p ) {
+	function CubicBezierP1( t, p ) {
 
 		const k = 1 - t;
 		return 3 * k * k * t * p;
 
 	}
 
-	function CubicBezierP2$1( t, p ) {
+	function CubicBezierP2( t, p ) {
 
 		return 3 * ( 1 - t ) * t * t * p;
 
 	}
 
-	function CubicBezierP3$1( t, p ) {
+	function CubicBezierP3( t, p ) {
 
 		return t * t * t * p;
 
 	}
 
-	function CubicBezier$1( t, p0, p1, p2, p3 ) {
+	function CubicBezier( t, p0, p1, p2, p3 ) {
 
-		return CubicBezierP0$1( t, p0 ) + CubicBezierP1$1( t, p1 ) + CubicBezierP2$1( t, p2 ) +
-			CubicBezierP3$1( t, p3 );
+		return CubicBezierP0( t, p0 ) + CubicBezierP1( t, p1 ) + CubicBezierP2( t, p2 ) +
+			CubicBezierP3( t, p3 );
 
 	}
 
-	class CubicBezierCurve$1 extends Curve$1 {
+	class CubicBezierCurve extends Curve {
 
 		constructor( v0 = new Vector2$1(), v1 = new Vector2$1(), v2 = new Vector2$1(), v3 = new Vector2$1() ) {
 
@@ -29245,8 +29440,8 @@
 			const v0 = this.v0, v1 = this.v1, v2 = this.v2, v3 = this.v3;
 
 			point.set(
-				CubicBezier$1( t, v0.x, v1.x, v2.x, v3.x ),
-				CubicBezier$1( t, v0.y, v1.y, v2.y, v3.y )
+				CubicBezier( t, v0.x, v1.x, v2.x, v3.x ),
+				CubicBezier( t, v0.y, v1.y, v2.y, v3.y )
 			);
 
 			return point;
@@ -29294,9 +29489,9 @@
 
 	}
 
-	CubicBezierCurve$1.prototype.isCubicBezierCurve = true;
+	CubicBezierCurve.prototype.isCubicBezierCurve = true;
 
-	class CubicBezierCurve3$1 extends Curve$1 {
+	class CubicBezierCurve3 extends Curve {
 
 		constructor( v0 = new Vector3$1(), v1 = new Vector3$1(), v2 = new Vector3$1(), v3 = new Vector3$1() ) {
 
@@ -29318,9 +29513,9 @@
 			const v0 = this.v0, v1 = this.v1, v2 = this.v2, v3 = this.v3;
 
 			point.set(
-				CubicBezier$1( t, v0.x, v1.x, v2.x, v3.x ),
-				CubicBezier$1( t, v0.y, v1.y, v2.y, v3.y ),
-				CubicBezier$1( t, v0.z, v1.z, v2.z, v3.z )
+				CubicBezier( t, v0.x, v1.x, v2.x, v3.x ),
+				CubicBezier( t, v0.y, v1.y, v2.y, v3.y ),
+				CubicBezier( t, v0.z, v1.z, v2.z, v3.z )
 			);
 
 			return point;
@@ -29368,9 +29563,9 @@
 
 	}
 
-	CubicBezierCurve3$1.prototype.isCubicBezierCurve3 = true;
+	CubicBezierCurve3.prototype.isCubicBezierCurve3 = true;
 
-	class LineCurve$1 extends Curve$1 {
+	class LineCurve extends Curve {
 
 		constructor( v1 = new Vector2$1(), v2 = new Vector2$1() ) {
 
@@ -29454,9 +29649,9 @@
 
 	}
 
-	LineCurve$1.prototype.isLineCurve = true;
+	LineCurve.prototype.isLineCurve = true;
 
-	class LineCurve3$1 extends Curve$1 {
+	class LineCurve3 extends Curve {
 
 		constructor( v1 = new Vector3$1(), v2 = new Vector3$1() ) {
 
@@ -29526,7 +29721,7 @@
 
 	}
 
-	class QuadraticBezierCurve$1 extends Curve$1 {
+	class QuadraticBezierCurve extends Curve {
 
 		constructor( v0 = new Vector2$1(), v1 = new Vector2$1(), v2 = new Vector2$1() ) {
 
@@ -29547,8 +29742,8 @@
 			const v0 = this.v0, v1 = this.v1, v2 = this.v2;
 
 			point.set(
-				QuadraticBezier$1( t, v0.x, v1.x, v2.x ),
-				QuadraticBezier$1( t, v0.y, v1.y, v2.y )
+				QuadraticBezier( t, v0.x, v1.x, v2.x ),
+				QuadraticBezier( t, v0.y, v1.y, v2.y )
 			);
 
 			return point;
@@ -29593,9 +29788,9 @@
 
 	}
 
-	QuadraticBezierCurve$1.prototype.isQuadraticBezierCurve = true;
+	QuadraticBezierCurve.prototype.isQuadraticBezierCurve = true;
 
-	class QuadraticBezierCurve3$1 extends Curve$1 {
+	class QuadraticBezierCurve3 extends Curve {
 
 		constructor( v0 = new Vector3$1(), v1 = new Vector3$1(), v2 = new Vector3$1() ) {
 
@@ -29616,9 +29811,9 @@
 			const v0 = this.v0, v1 = this.v1, v2 = this.v2;
 
 			point.set(
-				QuadraticBezier$1( t, v0.x, v1.x, v2.x ),
-				QuadraticBezier$1( t, v0.y, v1.y, v2.y ),
-				QuadraticBezier$1( t, v0.z, v1.z, v2.z )
+				QuadraticBezier( t, v0.x, v1.x, v2.x ),
+				QuadraticBezier( t, v0.y, v1.y, v2.y ),
+				QuadraticBezier( t, v0.z, v1.z, v2.z )
 			);
 
 			return point;
@@ -29663,9 +29858,9 @@
 
 	}
 
-	QuadraticBezierCurve3$1.prototype.isQuadraticBezierCurve3 = true;
+	QuadraticBezierCurve3.prototype.isQuadraticBezierCurve3 = true;
 
-	class SplineCurve$1 extends Curve$1 {
+	class SplineCurve extends Curve {
 
 		constructor( points = [] ) {
 
@@ -29693,8 +29888,8 @@
 			const p3 = points[ intPoint > points.length - 3 ? points.length - 1 : intPoint + 2 ];
 
 			point.set(
-				CatmullRom$1( weight, p0.x, p1.x, p2.x, p3.x ),
-				CatmullRom$1( weight, p0.y, p1.y, p2.y, p3.y )
+				CatmullRom( weight, p0.x, p1.x, p2.x, p3.x ),
+				CatmullRom( weight, p0.y, p1.y, p2.y, p3.y )
 			);
 
 			return point;
@@ -29755,20 +29950,20 @@
 
 	}
 
-	SplineCurve$1.prototype.isSplineCurve = true;
+	SplineCurve.prototype.isSplineCurve = true;
 
-	var Curves$1 = /*#__PURE__*/Object.freeze({
+	var Curves = /*#__PURE__*/Object.freeze({
 		__proto__: null,
-		ArcCurve: ArcCurve$1,
-		CatmullRomCurve3: CatmullRomCurve3$1,
-		CubicBezierCurve: CubicBezierCurve$1,
-		CubicBezierCurve3: CubicBezierCurve3$1,
-		EllipseCurve: EllipseCurve$1,
-		LineCurve: LineCurve$1,
-		LineCurve3: LineCurve3$1,
-		QuadraticBezierCurve: QuadraticBezierCurve$1,
-		QuadraticBezierCurve3: QuadraticBezierCurve3$1,
-		SplineCurve: SplineCurve$1
+		ArcCurve: ArcCurve,
+		CatmullRomCurve3: CatmullRomCurve3,
+		CubicBezierCurve: CubicBezierCurve,
+		CubicBezierCurve3: CubicBezierCurve3,
+		EllipseCurve: EllipseCurve,
+		LineCurve: LineCurve,
+		LineCurve3: LineCurve3,
+		QuadraticBezierCurve: QuadraticBezierCurve,
+		QuadraticBezierCurve3: QuadraticBezierCurve3,
+		SplineCurve: SplineCurve
 	});
 
 	/**
@@ -31355,7 +31550,7 @@
 
 			if ( extrudePath !== undefined ) {
 
-				data.options.extrudePath = new Curves$1[ extrudePath.type ]().fromJSON( extrudePath );
+				data.options.extrudePath = new Curves[ extrudePath.type ]().fromJSON( extrudePath );
 
 			}
 
@@ -31671,6 +31866,134 @@
 			super( shapes, parameters );
 
 			this.type = 'TextGeometry';
+
+		}
+
+	}
+
+	class WireframeGeometry extends BufferGeometry$1 {
+
+		constructor( geometry ) {
+
+			super();
+			this.type = 'WireframeGeometry';
+
+			if ( geometry.isGeometry === true ) {
+
+				console.error( 'THREE.WireframeGeometry no longer supports THREE.Geometry. Use THREE.BufferGeometry instead.' );
+				return;
+
+			}
+
+			// buffer
+
+			const vertices = [];
+			const edges = new Set();
+
+			// helper variables
+
+			const start = new Vector3$1();
+			const end = new Vector3$1();
+
+			if ( geometry.index !== null ) {
+
+				// indexed BufferGeometry
+
+				const position = geometry.attributes.position;
+				const indices = geometry.index;
+				let groups = geometry.groups;
+
+				if ( groups.length === 0 ) {
+
+					groups = [ { start: 0, count: indices.count, materialIndex: 0 } ];
+
+				}
+
+				// create a data structure that contains all eges without duplicates
+
+				for ( let o = 0, ol = groups.length; o < ol; ++ o ) {
+
+					const group = groups[ o ];
+
+					const groupStart = group.start;
+					const groupCount = group.count;
+
+					for ( let i = groupStart, l = ( groupStart + groupCount ); i < l; i += 3 ) {
+
+						for ( let j = 0; j < 3; j ++ ) {
+
+							const index1 = indices.getX( i + j );
+							const index2 = indices.getX( i + ( j + 1 ) % 3 );
+
+							start.fromBufferAttribute( position, index1 );
+							end.fromBufferAttribute( position, index2 );
+
+							if ( isUniqueEdge( start, end, edges ) === true ) {
+
+								vertices.push( start.x, start.y, start.z );
+								vertices.push( end.x, end.y, end.z );
+
+							}
+
+						}
+
+					}
+
+				}
+
+			} else {
+
+				// non-indexed BufferGeometry
+
+				const position = geometry.attributes.position;
+
+				for ( let i = 0, l = ( position.count / 3 ); i < l; i ++ ) {
+
+					for ( let j = 0; j < 3; j ++ ) {
+
+						// three edges per triangle, an edge is represented as (index1, index2)
+						// e.g. the first triangle has the following edges: (0,1),(1,2),(2,0)
+
+						const index1 = 3 * i + j;
+						const index2 = 3 * i + ( ( j + 1 ) % 3 );
+
+						start.fromBufferAttribute( position, index1 );
+						end.fromBufferAttribute( position, index2 );
+
+						if ( isUniqueEdge( start, end, edges ) === true ) {
+
+							vertices.push( start.x, start.y, start.z );
+							vertices.push( end.x, end.y, end.z );
+
+						}
+
+					}
+
+				}
+
+			}
+
+			// build geometry
+
+			this.setAttribute( 'position', new Float32BufferAttribute$1( vertices, 3 ) );
+
+		}
+
+	}
+
+	function isUniqueEdge( start, end, edges ) {
+
+		const hash1 = `${start.x},${start.y},${start.z}-${end.x},${end.y},${end.z}`;
+		const hash2 = `${end.x},${end.y},${end.z}-${start.x},${start.y},${start.z}`; // coincident edge
+
+		if ( edges.has( hash1 ) === true || edges.has( hash2 ) === true ) {
+
+			return false;
+
+		} else {
+
+			edges.add( hash1, hash2 );
+			return true;
 
 		}
 
@@ -35152,7 +35475,7 @@
 	 *  curves, but retains the api of a curve
 	 **************************************************************/
 
-	class CurvePath$1 extends Curve$1 {
+	class CurvePath extends Curve {
 
 		constructor() {
 
@@ -35179,7 +35502,7 @@
 
 			if ( ! startPoint.equals( endPoint ) ) {
 
-				this.curves.push( new LineCurve$1( endPoint, startPoint ) );
+				this.curves.push( new LineCurve( endPoint, startPoint ) );
 
 			}
 
@@ -35384,7 +35707,7 @@
 			for ( let i = 0, l = json.curves.length; i < l; i ++ ) {
 
 				const curve = json.curves[ i ];
-				this.curves.push( new Curves$1[ curve.type ]().fromJSON( curve ) );
+				this.curves.push( new Curves[ curve.type ]().fromJSON( curve ) );
 
 			}
 
@@ -35394,7 +35717,7 @@
 
 	}
 
-	class Path$1 extends CurvePath$1 {
+	class Path extends CurvePath {
 
 		constructor( points ) {
 
@@ -35435,7 +35758,7 @@
 
 		lineTo( x, y ) {
 
-			const curve = new LineCurve$1( this.currentPoint.clone(), new Vector2$1( x, y ) );
+			const curve = new LineCurve( this.currentPoint.clone(), new Vector2$1( x, y ) );
 			this.curves.push( curve );
 
 			this.currentPoint.set( x, y );
@@ -35446,7 +35769,7 @@
 
 		quadraticCurveTo( aCPx, aCPy, aX, aY ) {
 
-			const curve = new QuadraticBezierCurve$1(
+			const curve = new QuadraticBezierCurve(
 				this.currentPoint.clone(),
 				new Vector2$1( aCPx, aCPy ),
 				new Vector2$1( aX, aY )
@@ -35462,7 +35785,7 @@
 
 		bezierCurveTo( aCP1x, aCP1y, aCP2x, aCP2y, aX, aY ) {
 
-			const curve = new CubicBezierCurve$1(
+			const curve = new CubicBezierCurve(
 				this.currentPoint.clone(),
 				new Vector2$1( aCP1x, aCP1y ),
 				new Vector2$1( aCP2x, aCP2y ),
@@ -35481,7 +35804,7 @@
 
 			const npts = [ this.currentPoint.clone() ].concat( pts );
 
-			const curve = new SplineCurve$1( npts );
+			const curve = new SplineCurve( npts );
 			this.curves.push( curve );
 
 			this.currentPoint.copy( pts[ pts.length - 1 ] );
@@ -35523,7 +35846,7 @@
 
 		absellipse( aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation ) {
 
-			const curve = new EllipseCurve$1( aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation );
+			const curve = new EllipseCurve( aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation );
 
 			if ( this.curves.length > 0 ) {
 
@@ -35579,7 +35902,7 @@
 
 	}
 
-	class Shape$1 extends Path$1 {
+	class Shape extends Path {
 
 		constructor( points ) {
 
@@ -35666,7 +35989,7 @@
 			for ( let i = 0, l = json.holes.length; i < l; i ++ ) {
 
 				const hole = json.holes[ i ];
-				this.holes.push( new Path$1().fromJSON( hole ) );
+				this.holes.push( new Path().fromJSON( hole ) );
 
 			}
 
@@ -36784,7 +37107,7 @@
 
 		moveTo( x, y ) {
 
-			this.currentPath = new Path$1();
+			this.currentPath = new Path();
 			this.subPaths.push( this.currentPath );
 			this.currentPath.moveTo( x, y );
 
@@ -36834,7 +37157,7 @@
 
 					const tmpPath = inSubpaths[ i ];
 
-					const tmpShape = new Shape$1();
+					const tmpShape = new Shape();
 					tmpShape.curves = tmpPath.curves;
 
 					shapes.push( tmpShape );
@@ -36919,7 +37242,7 @@
 			if ( subPaths.length === 1 ) {
 
 				tmpPath = subPaths[ 0 ];
-				tmpShape = new Shape$1();
+				tmpShape = new Shape();
 				tmpShape.curves = tmpPath.curves;
 				shapes.push( tmpShape );
 				return shapes;
@@ -36951,7 +37274,7 @@
 
 					if ( ( ! holesFirst ) && ( newShapes[ mainIdx ] ) )	mainIdx ++;
 
-					newShapes[ mainIdx ] = { s: new Shape$1(), p: tmpPoints };
+					newShapes[ mainIdx ] = { s: new Shape(), p: tmpPoints };
 					newShapes[ mainIdx ].s.curves = tmpPath.curves;
 
 					if ( holesFirst )	mainIdx ++;
@@ -40264,6 +40587,117 @@
 
 	InstancedInterleavedBuffer.prototype.isInstancedInterleavedBuffer = true;
 
+	const _startP = /*@__PURE__*/ new Vector3$1();
+	const _startEnd = /*@__PURE__*/ new Vector3$1();
+
+	class Line3 {
+
+		constructor( start = new Vector3$1(), end = new Vector3$1() ) {
+
+			this.start = start;
+			this.end = end;
+
+		}
+
+		set( start, end ) {
+
+			this.start.copy( start );
+			this.end.copy( end );
+
+			return this;
+
+		}
+
+		copy( line ) {
+
+			this.start.copy( line.start );
+			this.end.copy( line.end );
+
+			return this;
+
+		}
+
+		getCenter( target ) {
+
+			return target.addVectors( this.start, this.end ).multiplyScalar( 0.5 );
+
+		}
+
+		delta( target ) {
+
+			return target.subVectors( this.end, this.start );
+
+		}
+
+		distanceSq() {
+
+			return this.start.distanceToSquared( this.end );
+
+		}
+
+		distance() {
+
+			return this.start.distanceTo( this.end );
+
+		}
+
+		at( t, target ) {
+
+			return this.delta( target ).multiplyScalar( t ).add( this.start );
+
+		}
+
+		closestPointToPointParameter( point, clampToLine ) {
+
+			_startP.subVectors( point, this.start );
+			_startEnd.subVectors( this.end, this.start );
+
+			const startEnd2 = _startEnd.dot( _startEnd );
+			const startEnd_startP = _startEnd.dot( _startP );
+
+			let t = startEnd_startP / startEnd2;
+
+			if ( clampToLine ) {
+
+				t = clamp$1( t, 0, 1 );
+
+			}
+
+			return t;
+
+		}
+
+		closestPointToPoint( point, clampToLine, target ) {
+
+			const t = this.closestPointToPointParameter( point, clampToLine );
+
+			return this.delta( target ).multiplyScalar( t ).add( this.start );
+
+		}
+
+		applyMatrix4( matrix ) {
+
+			this.start.applyMatrix4( matrix );
+			this.end.applyMatrix4( matrix );
+
+			return this;
+
+		}
+
+		equals( line ) {
+
+			return line.start.equals( this.start ) && line.end.equals( this.end );
+
+		}
+
+		clone() {
+
+			return new this.constructor().copy( this );
+
+		}
+
+	}
+
 	class ImmediateRenderObject extends Object3D$1 {
 
 		constructor( material ) {
@@ -40447,11 +40881,11 @@
 
 	//
 
-	Curve$1.create = function ( construct, getPoint ) {
+	Curve.create = function ( construct, getPoint ) {
 
 		console.log( 'THREE.Curve.create() has been deprecated' );
 
-		construct.prototype = Object.create( Curve$1.prototype );
+		construct.prototype = Object.create( Curve.prototype );
 		construct.prototype.constructor = construct;
 		construct.prototype.getPoint = getPoint;
 
@@ -40461,7 +40895,7 @@
 
 	//
 
-	Path$1.prototype.fromPoints = function ( points ) {
+	Path.prototype.fromPoints = function ( points ) {
 
 		console.warn( 'THREE.Path: .fromPoints() has been renamed to .setFromPoints().' );
 		return this.setFromPoints( points );
@@ -40557,6 +40991,15 @@
 
 		console.warn( 'THREE.Frustum: .setFromMatrix() has been renamed to .setFromProjectionMatrix().' );
 		return this.setFromProjectionMatrix( m );
+
+	};
+
+	//
+
+	Line3.prototype.center = function ( optionalTarget ) {
+
+		console.warn( 'THREE.Line3: .center() has been renamed to .getCenter().' );
+		return this.getCenter( optionalTarget );
 
 	};
 
@@ -40830,21 +41273,21 @@
 
 	//
 
-	Shape$1.prototype.extractAllPoints = function ( divisions ) {
+	Shape.prototype.extractAllPoints = function ( divisions ) {
 
 		console.warn( 'THREE.Shape: .extractAllPoints() has been removed. Use .extractPoints() instead.' );
 		return this.extractPoints( divisions );
 
 	};
 
-	Shape$1.prototype.extrude = function ( options ) {
+	Shape.prototype.extrude = function ( options ) {
 
 		console.warn( 'THREE.Shape: .extrude() has been removed. Use ExtrudeGeometry() instead.' );
 		return new ExtrudeGeometry( this, options );
 
 	};
 
-	Shape$1.prototype.makeGeometry = function ( options ) {
+	Shape.prototype.makeGeometry = function ( options ) {
 
 		console.warn( 'THREE.Shape: .makeGeometry() has been removed. Use ShapeGeometry() instead.' );
 		return new ShapeGeometry( this, options );
@@ -43278,9 +43721,9 @@
 
 		projectOnPlane( planeNormal ) {
 
-			_vector$5.copy( this ).projectOnVector( planeNormal );
+			_vector$6.copy( this ).projectOnVector( planeNormal );
 
-			return this.sub( _vector$5 );
+			return this.sub( _vector$6 );
 
 		}
 
@@ -43289,7 +43732,7 @@
 			// reflect incident vector off plane orthogonal to normal
 			// normal is assumed to have unit length
 
-			return this.sub( _vector$5.copy( normal ).multiplyScalar( 2 * this.dot( normal ) ) );
+			return this.sub( _vector$6.copy( normal ).multiplyScalar( 2 * this.dot( normal ) ) );
 
 		}
 
@@ -43455,7 +43898,7 @@
 
 	Vector3.prototype.isVector3 = true;
 
-	const _vector$5 = /*@__PURE__*/ new Vector3();
+	const _vector$6 = /*@__PURE__*/ new Vector3();
 	const _quaternion$2 = /*@__PURE__*/ new Quaternion();
 
 	class Matrix4 {
@@ -48275,7 +48718,7 @@
 
 		setFromCenterAndSize( center, size ) {
 
-			const halfSize = _vector$4.copy( size ).multiplyScalar( 0.5 );
+			const halfSize = _vector$5.copy( size ).multiplyScalar( 0.5 );
 
 			this.min.copy( center ).sub( halfSize );
 			this.max.copy( center ).add( halfSize );
@@ -48380,10 +48823,10 @@
 
 				}
 
-				_box$2.copy( geometry.boundingBox );
-				_box$2.applyMatrix4( object.matrixWorld );
+				_box$4.copy( geometry.boundingBox );
+				_box$4.applyMatrix4( object.matrixWorld );
 
-				this.union( _box$2 );
+				this.union( _box$4 );
 
 			}
 
@@ -48440,10 +48883,10 @@
 		intersectsSphere( sphere ) {
 
 			// Find the point on the AABB closest to the sphere center.
-			this.clampPoint( sphere.center, _vector$4 );
+			this.clampPoint( sphere.center, _vector$5 );
 
 			// If that point is inside the sphere, the AABB and sphere intersect.
-			return _vector$4.distanceToSquared( sphere.center ) <= ( sphere.radius * sphere.radius );
+			return _vector$5.distanceToSquared( sphere.center ) <= ( sphere.radius * sphere.radius );
 
 		}
 
@@ -48555,7 +48998,7 @@
 
 		distanceToPoint( point ) {
 
-			const clampedPoint = _vector$4.copy( point ).clamp( this.min, this.max );
+			const clampedPoint = _vector$5.copy( point ).clamp( this.min, this.max );
 
 			return clampedPoint.sub( point ).length();
 
@@ -48565,7 +49008,7 @@
 
 			this.getCenter( target.center );
 
-			target.radius = this.getSize( _vector$4 ).length() * 0.5;
+			target.radius = this.getSize( _vector$5 ).length() * 0.5;
 
 			return target;
 
@@ -48643,9 +49086,9 @@
 		/*@__PURE__*/ new Vector3()
 	];
 
-	const _vector$4 = /*@__PURE__*/ new Vector3();
+	const _vector$5 = /*@__PURE__*/ new Vector3();
 
-	const _box$2 = /*@__PURE__*/ new Box3();
+	const _box$4 = /*@__PURE__*/ new Box3();
 
 	// triangle centered vertices
 
@@ -48690,7 +49133,7 @@
 
 	}
 
-	const _box$1 = /*@__PURE__*/ new Box3();
+	const _box$3 = /*@__PURE__*/ new Box3();
 	const _v1$1 = /*@__PURE__*/ new Vector3();
 	const _toFarthestPoint = /*@__PURE__*/ new Vector3();
 	const _toPoint = /*@__PURE__*/ new Vector3();
@@ -48723,7 +49166,7 @@
 
 			} else {
 
-				_box$1.setFromPoints( points ).getCenter( center );
+				_box$3.setFromPoints( points ).getCenter( center );
 
 			}
 
@@ -49106,8 +49549,8 @@
 
 	Plane.prototype.isPlane = true;
 
-	const _sphere$1 = /*@__PURE__*/ new Sphere();
-	const _vector$3 = /*@__PURE__*/ new Vector3();
+	const _sphere$2 = /*@__PURE__*/ new Sphere();
+	const _vector$4 = /*@__PURE__*/ new Vector3();
 
 	class Frustum {
 
@@ -49172,19 +49615,19 @@
 
 			if ( geometry.boundingSphere === null ) geometry.computeBoundingSphere();
 
-			_sphere$1.copy( geometry.boundingSphere ).applyMatrix4( object.matrixWorld );
+			_sphere$2.copy( geometry.boundingSphere ).applyMatrix4( object.matrixWorld );
 
-			return this.intersectsSphere( _sphere$1 );
+			return this.intersectsSphere( _sphere$2 );
 
 		}
 
 		intersectsSprite( sprite ) {
 
-			_sphere$1.center.set( 0, 0, 0 );
-			_sphere$1.radius = 0.7071067811865476;
-			_sphere$1.applyMatrix4( sprite.matrixWorld );
+			_sphere$2.center.set( 0, 0, 0 );
+			_sphere$2.radius = 0.7071067811865476;
+			_sphere$2.applyMatrix4( sprite.matrixWorld );
 
-			return this.intersectsSphere( _sphere$1 );
+			return this.intersectsSphere( _sphere$2 );
 
 		}
 
@@ -49220,11 +49663,11 @@
 
 				// corner at max distance
 
-				_vector$3.x = plane.normal.x > 0 ? box.max.x : box.min.x;
-				_vector$3.y = plane.normal.y > 0 ? box.max.y : box.min.y;
-				_vector$3.z = plane.normal.z > 0 ? box.max.z : box.min.z;
+				_vector$4.x = plane.normal.x > 0 ? box.max.x : box.min.x;
+				_vector$4.y = plane.normal.y > 0 ? box.max.y : box.min.y;
+				_vector$4.z = plane.normal.z > 0 ? box.max.z : box.min.z;
 
-				if ( plane.distanceToPoint( _vector$3 ) < 0 ) {
+				if ( plane.distanceToPoint( _vector$4 ) < 0 ) {
 
 					return false;
 
@@ -49952,7 +50395,7 @@
 
 	}
 
-	const _vector$2 = /*@__PURE__*/ new Vector3();
+	const _vector$3 = /*@__PURE__*/ new Vector3();
 	const _vector2 = /*@__PURE__*/ new Vector2();
 
 	class BufferAttribute {
@@ -50153,10 +50596,10 @@
 
 				for ( let i = 0, l = this.count; i < l; i ++ ) {
 
-					_vector$2.fromBufferAttribute( this, i );
-					_vector$2.applyMatrix3( m );
+					_vector$3.fromBufferAttribute( this, i );
+					_vector$3.applyMatrix3( m );
 
-					this.setXYZ( i, _vector$2.x, _vector$2.y, _vector$2.z );
+					this.setXYZ( i, _vector$3.x, _vector$3.y, _vector$3.z );
 
 				}
 
@@ -50170,13 +50613,13 @@
 
 			for ( let i = 0, l = this.count; i < l; i ++ ) {
 
-				_vector$2.x = this.getX( i );
-				_vector$2.y = this.getY( i );
-				_vector$2.z = this.getZ( i );
+				_vector$3.x = this.getX( i );
+				_vector$3.y = this.getY( i );
+				_vector$3.z = this.getZ( i );
 
-				_vector$2.applyMatrix4( m );
+				_vector$3.applyMatrix4( m );
 
-				this.setXYZ( i, _vector$2.x, _vector$2.y, _vector$2.z );
+				this.setXYZ( i, _vector$3.x, _vector$3.y, _vector$3.z );
 
 			}
 
@@ -50188,13 +50631,13 @@
 
 			for ( let i = 0, l = this.count; i < l; i ++ ) {
 
-				_vector$2.x = this.getX( i );
-				_vector$2.y = this.getY( i );
-				_vector$2.z = this.getZ( i );
+				_vector$3.x = this.getX( i );
+				_vector$3.y = this.getY( i );
+				_vector$3.z = this.getZ( i );
 
-				_vector$2.applyNormalMatrix( m );
+				_vector$3.applyNormalMatrix( m );
 
-				this.setXYZ( i, _vector$2.x, _vector$2.y, _vector$2.z );
+				this.setXYZ( i, _vector$3.x, _vector$3.y, _vector$3.z );
 
 			}
 
@@ -50206,13 +50649,13 @@
 
 			for ( let i = 0, l = this.count; i < l; i ++ ) {
 
-				_vector$2.x = this.getX( i );
-				_vector$2.y = this.getY( i );
-				_vector$2.z = this.getZ( i );
+				_vector$3.x = this.getX( i );
+				_vector$3.y = this.getY( i );
+				_vector$3.z = this.getZ( i );
 
-				_vector$2.transformDirection( m );
+				_vector$3.transformDirection( m );
 
-				this.setXYZ( i, _vector$2.x, _vector$2.y, _vector$2.z );
+				this.setXYZ( i, _vector$3.x, _vector$3.y, _vector$3.z );
 
 			}
 
@@ -50418,9 +50861,9 @@
 	const _m1 = /*@__PURE__*/ new Matrix4();
 	const _obj = /*@__PURE__*/ new Object3D();
 	const _offset = /*@__PURE__*/ new Vector3();
-	const _box = /*@__PURE__*/ new Box3();
+	const _box$2 = /*@__PURE__*/ new Box3();
 	const _boxMorphTargets = /*@__PURE__*/ new Box3();
-	const _vector$1 = /*@__PURE__*/ new Vector3();
+	const _vector$2 = /*@__PURE__*/ new Vector3();
 
 	class BufferGeometry extends EventDispatcher {
 
@@ -50723,20 +51166,20 @@
 					for ( let i = 0, il = morphAttributesPosition.length; i < il; i ++ ) {
 
 						const morphAttribute = morphAttributesPosition[ i ];
-						_box.setFromBufferAttribute( morphAttribute );
+						_box$2.setFromBufferAttribute( morphAttribute );
 
 						if ( this.morphTargetsRelative ) {
 
-							_vector$1.addVectors( this.boundingBox.min, _box.min );
-							this.boundingBox.expandByPoint( _vector$1 );
+							_vector$2.addVectors( this.boundingBox.min, _box$2.min );
+							this.boundingBox.expandByPoint( _vector$2 );
 
-							_vector$1.addVectors( this.boundingBox.max, _box.max );
-							this.boundingBox.expandByPoint( _vector$1 );
+							_vector$2.addVectors( this.boundingBox.max, _box$2.max );
+							this.boundingBox.expandByPoint( _vector$2 );
 
 						} else {
 
-							this.boundingBox.expandByPoint( _box.min );
-							this.boundingBox.expandByPoint( _box.max );
+							this.boundingBox.expandByPoint( _box$2.min );
+							this.boundingBox.expandByPoint( _box$2.max );
 
 						}
 
@@ -50785,7 +51228,7 @@
 
 				const center = this.boundingSphere.center;
 
-				_box.setFromBufferAttribute( position );
+				_box$2.setFromBufferAttribute( position );
 
 				// process morph attributes if present
 
@@ -50798,16 +51241,16 @@
 
 						if ( this.morphTargetsRelative ) {
 
-							_vector$1.addVectors( _box.min, _boxMorphTargets.min );
-							_box.expandByPoint( _vector$1 );
+							_vector$2.addVectors( _box$2.min, _boxMorphTargets.min );
+							_box$2.expandByPoint( _vector$2 );
 
-							_vector$1.addVectors( _box.max, _boxMorphTargets.max );
-							_box.expandByPoint( _vector$1 );
+							_vector$2.addVectors( _box$2.max, _boxMorphTargets.max );
+							_box$2.expandByPoint( _vector$2 );
 
 						} else {
 
-							_box.expandByPoint( _boxMorphTargets.min );
-							_box.expandByPoint( _boxMorphTargets.max );
+							_box$2.expandByPoint( _boxMorphTargets.min );
+							_box$2.expandByPoint( _boxMorphTargets.max );
 
 						}
 
@@ -50815,7 +51258,7 @@
 
 				}
 
-				_box.getCenter( center );
+				_box$2.getCenter( center );
 
 				// second, try to find a boundingSphere with a radius smaller than the
 				// boundingSphere of the boundingBox: sqrt(3) smaller in the best case
@@ -50824,9 +51267,9 @@
 
 				for ( let i = 0, il = position.count; i < il; i ++ ) {
 
-					_vector$1.fromBufferAttribute( position, i );
+					_vector$2.fromBufferAttribute( position, i );
 
-					maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector$1 ) );
+					maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector$2 ) );
 
 				}
 
@@ -50841,16 +51284,16 @@
 
 						for ( let j = 0, jl = morphAttribute.count; j < jl; j ++ ) {
 
-							_vector$1.fromBufferAttribute( morphAttribute, j );
+							_vector$2.fromBufferAttribute( morphAttribute, j );
 
 							if ( morphTargetsRelative ) {
 
 								_offset.fromBufferAttribute( position, j );
-								_vector$1.add( _offset );
+								_vector$2.add( _offset );
 
 							}
 
-							maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector$1 ) );
+							maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector$2 ) );
 
 						}
 
@@ -51186,11 +51629,11 @@
 
 			for ( let i = 0, il = normals.count; i < il; i ++ ) {
 
-				_vector$1.fromBufferAttribute( normals, i );
+				_vector$2.fromBufferAttribute( normals, i );
 
-				_vector$1.normalize();
+				_vector$2.normalize();
 
-				normals.setXYZ( i, _vector$1.x, _vector$1.y, _vector$1.z );
+				normals.setXYZ( i, _vector$2.x, _vector$2.y, _vector$2.z );
 
 			}
 
@@ -52534,7 +52977,7 @@ void main() {
 
 	ShaderMaterial.prototype.isShaderMaterial = true;
 
-	const _vector = /*@__PURE__*/ new Vector3();
+	const _vector$1 = /*@__PURE__*/ new Vector3();
 	const _segCenter = /*@__PURE__*/ new Vector3();
 	const _segDir = /*@__PURE__*/ new Vector3();
 	const _diff = /*@__PURE__*/ new Vector3();
@@ -52586,7 +53029,7 @@ void main() {
 
 		recast( t ) {
 
-			this.origin.copy( this.at( t, _vector ) );
+			this.origin.copy( this.at( t, _vector$1 ) );
 
 			return this;
 
@@ -52616,7 +53059,7 @@ void main() {
 
 		distanceSqToPoint( point ) {
 
-			const directionDistance = _vector.subVectors( point, this.origin ).dot( this.direction );
+			const directionDistance = _vector$1.subVectors( point, this.origin ).dot( this.direction );
 
 			// point behind the ray
 
@@ -52626,9 +53069,9 @@ void main() {
 
 			}
 
-			_vector.copy( this.direction ).multiplyScalar( directionDistance ).add( this.origin );
+			_vector$1.copy( this.direction ).multiplyScalar( directionDistance ).add( this.origin );
 
-			return _vector.distanceToSquared( point );
+			return _vector$1.distanceToSquared( point );
 
 		}
 
@@ -52753,9 +53196,9 @@ void main() {
 
 		intersectSphere( sphere, target ) {
 
-			_vector.subVectors( sphere.center, this.origin );
-			const tca = _vector.dot( this.direction );
-			const d2 = _vector.dot( _vector ) - tca * tca;
+			_vector$1.subVectors( sphere.center, this.origin );
+			const tca = _vector$1.dot( this.direction );
+			const d2 = _vector$1.dot( _vector$1 ) - tca * tca;
 			const radius2 = sphere.radius * sphere.radius;
 
 			if ( d2 > radius2 ) return null;
@@ -52925,7 +53368,7 @@ void main() {
 
 		intersectsBox( box ) {
 
-			return this.intersectBox( box, _vector ) !== null;
+			return this.intersectBox( box, _vector$1 ) !== null;
 
 		}
 
@@ -53416,7 +53859,7 @@ void main() {
 
 	const _inverseMatrix = /*@__PURE__*/ new Matrix4();
 	const _ray = /*@__PURE__*/ new Ray();
-	const _sphere = /*@__PURE__*/ new Sphere();
+	const _sphere$1 = /*@__PURE__*/ new Sphere();
 
 	const _vA = /*@__PURE__*/ new Vector3();
 	const _vB = /*@__PURE__*/ new Vector3();
@@ -53532,10 +53975,10 @@ void main() {
 
 			if ( geometry.boundingSphere === null ) geometry.computeBoundingSphere();
 
-			_sphere.copy( geometry.boundingSphere );
-			_sphere.applyMatrix4( matrixWorld );
+			_sphere$1.copy( geometry.boundingSphere );
+			_sphere$1.applyMatrix4( matrixWorld );
 
-			if ( raycaster.ray.intersectsSphere( _sphere ) === false ) return;
+			if ( raycaster.ray.intersectsSphere( _sphere$1 ) === false ) return;
 
 			//
 
@@ -74031,1986 +74474,6 @@ void main() {
 	}
 
 	/**
-	 * Extensible curve object.
-	 *
-	 * Some common of curve methods:
-	 * .getPoint( t, optionalTarget ), .getTangent( t, optionalTarget )
-	 * .getPointAt( u, optionalTarget ), .getTangentAt( u, optionalTarget )
-	 * .getPoints(), .getSpacedPoints()
-	 * .getLength()
-	 * .updateArcLengths()
-	 *
-	 * This following curves inherit from THREE.Curve:
-	 *
-	 * -- 2D curves --
-	 * THREE.ArcCurve
-	 * THREE.CubicBezierCurve
-	 * THREE.EllipseCurve
-	 * THREE.LineCurve
-	 * THREE.QuadraticBezierCurve
-	 * THREE.SplineCurve
-	 *
-	 * -- 3D curves --
-	 * THREE.CatmullRomCurve3
-	 * THREE.CubicBezierCurve3
-	 * THREE.LineCurve3
-	 * THREE.QuadraticBezierCurve3
-	 *
-	 * A series of curves can be represented as a THREE.CurvePath.
-	 *
-	 **/
-
-	class Curve {
-
-		constructor() {
-
-			this.type = 'Curve';
-
-			this.arcLengthDivisions = 200;
-
-		}
-
-		// Virtual base class method to overwrite and implement in subclasses
-		//	- t [0 .. 1]
-
-		getPoint( /* t, optionalTarget */ ) {
-
-			console.warn( 'THREE.Curve: .getPoint() not implemented.' );
-			return null;
-
-		}
-
-		// Get point at relative position in curve according to arc length
-		// - u [0 .. 1]
-
-		getPointAt( u, optionalTarget ) {
-
-			const t = this.getUtoTmapping( u );
-			return this.getPoint( t, optionalTarget );
-
-		}
-
-		// Get sequence of points using getPoint( t )
-
-		getPoints( divisions = 5 ) {
-
-			const points = [];
-
-			for ( let d = 0; d <= divisions; d ++ ) {
-
-				points.push( this.getPoint( d / divisions ) );
-
-			}
-
-			return points;
-
-		}
-
-		// Get sequence of points using getPointAt( u )
-
-		getSpacedPoints( divisions = 5 ) {
-
-			const points = [];
-
-			for ( let d = 0; d <= divisions; d ++ ) {
-
-				points.push( this.getPointAt( d / divisions ) );
-
-			}
-
-			return points;
-
-		}
-
-		// Get total curve arc length
-
-		getLength() {
-
-			const lengths = this.getLengths();
-			return lengths[ lengths.length - 1 ];
-
-		}
-
-		// Get list of cumulative segment lengths
-
-		getLengths( divisions = this.arcLengthDivisions ) {
-
-			if ( this.cacheArcLengths &&
-				( this.cacheArcLengths.length === divisions + 1 ) &&
-				! this.needsUpdate ) {
-
-				return this.cacheArcLengths;
-
-			}
-
-			this.needsUpdate = false;
-
-			const cache = [];
-			let current, last = this.getPoint( 0 );
-			let sum = 0;
-
-			cache.push( 0 );
-
-			for ( let p = 1; p <= divisions; p ++ ) {
-
-				current = this.getPoint( p / divisions );
-				sum += current.distanceTo( last );
-				cache.push( sum );
-				last = current;
-
-			}
-
-			this.cacheArcLengths = cache;
-
-			return cache; // { sums: cache, sum: sum }; Sum is in the last element.
-
-		}
-
-		updateArcLengths() {
-
-			this.needsUpdate = true;
-			this.getLengths();
-
-		}
-
-		// Given u ( 0 .. 1 ), get a t to find p. This gives you points which are equidistant
-
-		getUtoTmapping( u, distance ) {
-
-			const arcLengths = this.getLengths();
-
-			let i = 0;
-			const il = arcLengths.length;
-
-			let targetArcLength; // The targeted u distance value to get
-
-			if ( distance ) {
-
-				targetArcLength = distance;
-
-			} else {
-
-				targetArcLength = u * arcLengths[ il - 1 ];
-
-			}
-
-			// binary search for the index with largest value smaller than target u distance
-
-			let low = 0, high = il - 1, comparison;
-
-			while ( low <= high ) {
-
-				i = Math.floor( low + ( high - low ) / 2 ); // less likely to overflow, though probably not issue here, JS doesn't really have integers, all numbers are floats
-
-				comparison = arcLengths[ i ] - targetArcLength;
-
-				if ( comparison < 0 ) {
-
-					low = i + 1;
-
-				} else if ( comparison > 0 ) {
-
-					high = i - 1;
-
-				} else {
-
-					high = i;
-					break;
-
-					// DONE
-
-				}
-
-			}
-
-			i = high;
-
-			if ( arcLengths[ i ] === targetArcLength ) {
-
-				return i / ( il - 1 );
-
-			}
-
-			// we could get finer grain at lengths, or use simple interpolation between two points
-
-			const lengthBefore = arcLengths[ i ];
-			const lengthAfter = arcLengths[ i + 1 ];
-
-			const segmentLength = lengthAfter - lengthBefore;
-
-			// determine where we are between the 'before' and 'after' points
-
-			const segmentFraction = ( targetArcLength - lengthBefore ) / segmentLength;
-
-			// add that fractional amount to t
-
-			const t = ( i + segmentFraction ) / ( il - 1 );
-
-			return t;
-
-		}
-
-		// Returns a unit vector tangent at t
-		// In case any sub curve does not implement its tangent derivation,
-		// 2 points a small delta apart will be used to find its gradient
-		// which seems to give a reasonable approximation
-
-		getTangent( t, optionalTarget ) {
-
-			const delta = 0.0001;
-			let t1 = t - delta;
-			let t2 = t + delta;
-
-			// Capping in case of danger
-
-			if ( t1 < 0 ) t1 = 0;
-			if ( t2 > 1 ) t2 = 1;
-
-			const pt1 = this.getPoint( t1 );
-			const pt2 = this.getPoint( t2 );
-
-			const tangent = optionalTarget || ( ( pt1.isVector2 ) ? new Vector2() : new Vector3() );
-
-			tangent.copy( pt2 ).sub( pt1 ).normalize();
-
-			return tangent;
-
-		}
-
-		getTangentAt( u, optionalTarget ) {
-
-			const t = this.getUtoTmapping( u );
-			return this.getTangent( t, optionalTarget );
-
-		}
-
-		computeFrenetFrames( segments, closed ) {
-
-			// see http://www.cs.indiana.edu/pub/techreports/TR425.pdf
-
-			const normal = new Vector3();
-
-			const tangents = [];
-			const normals = [];
-			const binormals = [];
-
-			const vec = new Vector3();
-			const mat = new Matrix4();
-
-			// compute the tangent vectors for each segment on the curve
-
-			for ( let i = 0; i <= segments; i ++ ) {
-
-				const u = i / segments;
-
-				tangents[ i ] = this.getTangentAt( u, new Vector3() );
-				tangents[ i ].normalize();
-
-			}
-
-			// select an initial normal vector perpendicular to the first tangent vector,
-			// and in the direction of the minimum tangent xyz component
-
-			normals[ 0 ] = new Vector3();
-			binormals[ 0 ] = new Vector3();
-			let min = Number.MAX_VALUE;
-			const tx = Math.abs( tangents[ 0 ].x );
-			const ty = Math.abs( tangents[ 0 ].y );
-			const tz = Math.abs( tangents[ 0 ].z );
-
-			if ( tx <= min ) {
-
-				min = tx;
-				normal.set( 1, 0, 0 );
-
-			}
-
-			if ( ty <= min ) {
-
-				min = ty;
-				normal.set( 0, 1, 0 );
-
-			}
-
-			if ( tz <= min ) {
-
-				normal.set( 0, 0, 1 );
-
-			}
-
-			vec.crossVectors( tangents[ 0 ], normal ).normalize();
-
-			normals[ 0 ].crossVectors( tangents[ 0 ], vec );
-			binormals[ 0 ].crossVectors( tangents[ 0 ], normals[ 0 ] );
-
-
-			// compute the slowly-varying normal and binormal vectors for each segment on the curve
-
-			for ( let i = 1; i <= segments; i ++ ) {
-
-				normals[ i ] = normals[ i - 1 ].clone();
-
-				binormals[ i ] = binormals[ i - 1 ].clone();
-
-				vec.crossVectors( tangents[ i - 1 ], tangents[ i ] );
-
-				if ( vec.length() > Number.EPSILON ) {
-
-					vec.normalize();
-
-					const theta = Math.acos( clamp( tangents[ i - 1 ].dot( tangents[ i ] ), - 1, 1 ) ); // clamp for floating pt errors
-
-					normals[ i ].applyMatrix4( mat.makeRotationAxis( vec, theta ) );
-
-				}
-
-				binormals[ i ].crossVectors( tangents[ i ], normals[ i ] );
-
-			}
-
-			// if the curve is closed, postprocess the vectors so the first and last normal vectors are the same
-
-			if ( closed === true ) {
-
-				let theta = Math.acos( clamp( normals[ 0 ].dot( normals[ segments ] ), - 1, 1 ) );
-				theta /= segments;
-
-				if ( tangents[ 0 ].dot( vec.crossVectors( normals[ 0 ], normals[ segments ] ) ) > 0 ) {
-
-					theta = - theta;
-
-				}
-
-				for ( let i = 1; i <= segments; i ++ ) {
-
-					// twist a little...
-					normals[ i ].applyMatrix4( mat.makeRotationAxis( tangents[ i ], theta * i ) );
-					binormals[ i ].crossVectors( tangents[ i ], normals[ i ] );
-
-				}
-
-			}
-
-			return {
-				tangents: tangents,
-				normals: normals,
-				binormals: binormals
-			};
-
-		}
-
-		clone() {
-
-			return new this.constructor().copy( this );
-
-		}
-
-		copy( source ) {
-
-			this.arcLengthDivisions = source.arcLengthDivisions;
-
-			return this;
-
-		}
-
-		toJSON() {
-
-			const data = {
-				metadata: {
-					version: 4.5,
-					type: 'Curve',
-					generator: 'Curve.toJSON'
-				}
-			};
-
-			data.arcLengthDivisions = this.arcLengthDivisions;
-			data.type = this.type;
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			this.arcLengthDivisions = json.arcLengthDivisions;
-
-			return this;
-
-		}
-
-	}
-
-	class EllipseCurve extends Curve {
-
-		constructor( aX = 0, aY = 0, xRadius = 1, yRadius = 1, aStartAngle = 0, aEndAngle = Math.PI * 2, aClockwise = false, aRotation = 0 ) {
-
-			super();
-
-			this.type = 'EllipseCurve';
-
-			this.aX = aX;
-			this.aY = aY;
-
-			this.xRadius = xRadius;
-			this.yRadius = yRadius;
-
-			this.aStartAngle = aStartAngle;
-			this.aEndAngle = aEndAngle;
-
-			this.aClockwise = aClockwise;
-
-			this.aRotation = aRotation;
-
-		}
-
-		getPoint( t, optionalTarget ) {
-
-			const point = optionalTarget || new Vector2();
-
-			const twoPi = Math.PI * 2;
-			let deltaAngle = this.aEndAngle - this.aStartAngle;
-			const samePoints = Math.abs( deltaAngle ) < Number.EPSILON;
-
-			// ensures that deltaAngle is 0 .. 2 PI
-			while ( deltaAngle < 0 ) deltaAngle += twoPi;
-			while ( deltaAngle > twoPi ) deltaAngle -= twoPi;
-
-			if ( deltaAngle < Number.EPSILON ) {
-
-				if ( samePoints ) {
-
-					deltaAngle = 0;
-
-				} else {
-
-					deltaAngle = twoPi;
-
-				}
-
-			}
-
-			if ( this.aClockwise === true && ! samePoints ) {
-
-				if ( deltaAngle === twoPi ) {
-
-					deltaAngle = - twoPi;
-
-				} else {
-
-					deltaAngle = deltaAngle - twoPi;
-
-				}
-
-			}
-
-			const angle = this.aStartAngle + t * deltaAngle;
-			let x = this.aX + this.xRadius * Math.cos( angle );
-			let y = this.aY + this.yRadius * Math.sin( angle );
-
-			if ( this.aRotation !== 0 ) {
-
-				const cos = Math.cos( this.aRotation );
-				const sin = Math.sin( this.aRotation );
-
-				const tx = x - this.aX;
-				const ty = y - this.aY;
-
-				// Rotate the point about the center of the ellipse.
-				x = tx * cos - ty * sin + this.aX;
-				y = tx * sin + ty * cos + this.aY;
-
-			}
-
-			return point.set( x, y );
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.aX = source.aX;
-			this.aY = source.aY;
-
-			this.xRadius = source.xRadius;
-			this.yRadius = source.yRadius;
-
-			this.aStartAngle = source.aStartAngle;
-			this.aEndAngle = source.aEndAngle;
-
-			this.aClockwise = source.aClockwise;
-
-			this.aRotation = source.aRotation;
-
-			return this;
-
-		}
-
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.aX = this.aX;
-			data.aY = this.aY;
-
-			data.xRadius = this.xRadius;
-			data.yRadius = this.yRadius;
-
-			data.aStartAngle = this.aStartAngle;
-			data.aEndAngle = this.aEndAngle;
-
-			data.aClockwise = this.aClockwise;
-
-			data.aRotation = this.aRotation;
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.aX = json.aX;
-			this.aY = json.aY;
-
-			this.xRadius = json.xRadius;
-			this.yRadius = json.yRadius;
-
-			this.aStartAngle = json.aStartAngle;
-			this.aEndAngle = json.aEndAngle;
-
-			this.aClockwise = json.aClockwise;
-
-			this.aRotation = json.aRotation;
-
-			return this;
-
-		}
-
-	}
-
-	EllipseCurve.prototype.isEllipseCurve = true;
-
-	class ArcCurve extends EllipseCurve {
-
-		constructor( aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise ) {
-
-			super( aX, aY, aRadius, aRadius, aStartAngle, aEndAngle, aClockwise );
-
-			this.type = 'ArcCurve';
-
-		}
-
-	}
-
-	ArcCurve.prototype.isArcCurve = true;
-
-	/**
-	 * Centripetal CatmullRom Curve - which is useful for avoiding
-	 * cusps and self-intersections in non-uniform catmull rom curves.
-	 * http://www.cemyuksel.com/research/catmullrom_param/catmullrom.pdf
-	 *
-	 * curve.type accepts centripetal(default), chordal and catmullrom
-	 * curve.tension is used for catmullrom which defaults to 0.5
-	 */
-
-
-	/*
-	Based on an optimized c++ solution in
-	 - http://stackoverflow.com/questions/9489736/catmull-rom-curve-with-no-cusps-and-no-self-intersections/
-	 - http://ideone.com/NoEbVM
-
-	This CubicPoly class could be used for reusing some variables and calculations,
-	but for three.js curve use, it could be possible inlined and flatten into a single function call
-	which can be placed in CurveUtils.
-	*/
-
-	function CubicPoly() {
-
-		let c0 = 0, c1 = 0, c2 = 0, c3 = 0;
-
-		/*
-		 * Compute coefficients for a cubic polynomial
-		 *   p(s) = c0 + c1*s + c2*s^2 + c3*s^3
-		 * such that
-		 *   p(0) = x0, p(1) = x1
-		 *  and
-		 *   p'(0) = t0, p'(1) = t1.
-		 */
-		function init( x0, x1, t0, t1 ) {
-
-			c0 = x0;
-			c1 = t0;
-			c2 = - 3 * x0 + 3 * x1 - 2 * t0 - t1;
-			c3 = 2 * x0 - 2 * x1 + t0 + t1;
-
-		}
-
-		return {
-
-			initCatmullRom: function ( x0, x1, x2, x3, tension ) {
-
-				init( x1, x2, tension * ( x2 - x0 ), tension * ( x3 - x1 ) );
-
-			},
-
-			initNonuniformCatmullRom: function ( x0, x1, x2, x3, dt0, dt1, dt2 ) {
-
-				// compute tangents when parameterized in [t1,t2]
-				let t1 = ( x1 - x0 ) / dt0 - ( x2 - x0 ) / ( dt0 + dt1 ) + ( x2 - x1 ) / dt1;
-				let t2 = ( x2 - x1 ) / dt1 - ( x3 - x1 ) / ( dt1 + dt2 ) + ( x3 - x2 ) / dt2;
-
-				// rescale tangents for parametrization in [0,1]
-				t1 *= dt1;
-				t2 *= dt1;
-
-				init( x1, x2, t1, t2 );
-
-			},
-
-			calc: function ( t ) {
-
-				const t2 = t * t;
-				const t3 = t2 * t;
-				return c0 + c1 * t + c2 * t2 + c3 * t3;
-
-			}
-
-		};
-
-	}
-
-	//
-
-	const tmp = new Vector3();
-	const px = new CubicPoly(), py = new CubicPoly(), pz = new CubicPoly();
-
-	class CatmullRomCurve3 extends Curve {
-
-		constructor( points = [], closed = false, curveType = 'centripetal', tension = 0.5 ) {
-
-			super();
-
-			this.type = 'CatmullRomCurve3';
-
-			this.points = points;
-			this.closed = closed;
-			this.curveType = curveType;
-			this.tension = tension;
-
-		}
-
-		getPoint( t, optionalTarget = new Vector3() ) {
-
-			const point = optionalTarget;
-
-			const points = this.points;
-			const l = points.length;
-
-			const p = ( l - ( this.closed ? 0 : 1 ) ) * t;
-			let intPoint = Math.floor( p );
-			let weight = p - intPoint;
-
-			if ( this.closed ) {
-
-				intPoint += intPoint > 0 ? 0 : ( Math.floor( Math.abs( intPoint ) / l ) + 1 ) * l;
-
-			} else if ( weight === 0 && intPoint === l - 1 ) {
-
-				intPoint = l - 2;
-				weight = 1;
-
-			}
-
-			let p0, p3; // 4 points (p1 & p2 defined below)
-
-			if ( this.closed || intPoint > 0 ) {
-
-				p0 = points[ ( intPoint - 1 ) % l ];
-
-			} else {
-
-				// extrapolate first point
-				tmp.subVectors( points[ 0 ], points[ 1 ] ).add( points[ 0 ] );
-				p0 = tmp;
-
-			}
-
-			const p1 = points[ intPoint % l ];
-			const p2 = points[ ( intPoint + 1 ) % l ];
-
-			if ( this.closed || intPoint + 2 < l ) {
-
-				p3 = points[ ( intPoint + 2 ) % l ];
-
-			} else {
-
-				// extrapolate last point
-				tmp.subVectors( points[ l - 1 ], points[ l - 2 ] ).add( points[ l - 1 ] );
-				p3 = tmp;
-
-			}
-
-			if ( this.curveType === 'centripetal' || this.curveType === 'chordal' ) {
-
-				// init Centripetal / Chordal Catmull-Rom
-				const pow = this.curveType === 'chordal' ? 0.5 : 0.25;
-				let dt0 = Math.pow( p0.distanceToSquared( p1 ), pow );
-				let dt1 = Math.pow( p1.distanceToSquared( p2 ), pow );
-				let dt2 = Math.pow( p2.distanceToSquared( p3 ), pow );
-
-				// safety check for repeated points
-				if ( dt1 < 1e-4 ) dt1 = 1.0;
-				if ( dt0 < 1e-4 ) dt0 = dt1;
-				if ( dt2 < 1e-4 ) dt2 = dt1;
-
-				px.initNonuniformCatmullRom( p0.x, p1.x, p2.x, p3.x, dt0, dt1, dt2 );
-				py.initNonuniformCatmullRom( p0.y, p1.y, p2.y, p3.y, dt0, dt1, dt2 );
-				pz.initNonuniformCatmullRom( p0.z, p1.z, p2.z, p3.z, dt0, dt1, dt2 );
-
-			} else if ( this.curveType === 'catmullrom' ) {
-
-				px.initCatmullRom( p0.x, p1.x, p2.x, p3.x, this.tension );
-				py.initCatmullRom( p0.y, p1.y, p2.y, p3.y, this.tension );
-				pz.initCatmullRom( p0.z, p1.z, p2.z, p3.z, this.tension );
-
-			}
-
-			point.set(
-				px.calc( weight ),
-				py.calc( weight ),
-				pz.calc( weight )
-			);
-
-			return point;
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.points = [];
-
-			for ( let i = 0, l = source.points.length; i < l; i ++ ) {
-
-				const point = source.points[ i ];
-
-				this.points.push( point.clone() );
-
-			}
-
-			this.closed = source.closed;
-			this.curveType = source.curveType;
-			this.tension = source.tension;
-
-			return this;
-
-		}
-
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.points = [];
-
-			for ( let i = 0, l = this.points.length; i < l; i ++ ) {
-
-				const point = this.points[ i ];
-				data.points.push( point.toArray() );
-
-			}
-
-			data.closed = this.closed;
-			data.curveType = this.curveType;
-			data.tension = this.tension;
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.points = [];
-
-			for ( let i = 0, l = json.points.length; i < l; i ++ ) {
-
-				const point = json.points[ i ];
-				this.points.push( new Vector3().fromArray( point ) );
-
-			}
-
-			this.closed = json.closed;
-			this.curveType = json.curveType;
-			this.tension = json.tension;
-
-			return this;
-
-		}
-
-	}
-
-	CatmullRomCurve3.prototype.isCatmullRomCurve3 = true;
-
-	/**
-	 * Bezier Curves formulas obtained from
-	 * http://en.wikipedia.org/wiki/Bézier_curve
-	 */
-
-	function CatmullRom( t, p0, p1, p2, p3 ) {
-
-		const v0 = ( p2 - p0 ) * 0.5;
-		const v1 = ( p3 - p1 ) * 0.5;
-		const t2 = t * t;
-		const t3 = t * t2;
-		return ( 2 * p1 - 2 * p2 + v0 + v1 ) * t3 + ( - 3 * p1 + 3 * p2 - 2 * v0 - v1 ) * t2 + v0 * t + p1;
-
-	}
-
-	//
-
-	function QuadraticBezierP0( t, p ) {
-
-		const k = 1 - t;
-		return k * k * p;
-
-	}
-
-	function QuadraticBezierP1( t, p ) {
-
-		return 2 * ( 1 - t ) * t * p;
-
-	}
-
-	function QuadraticBezierP2( t, p ) {
-
-		return t * t * p;
-
-	}
-
-	function QuadraticBezier( t, p0, p1, p2 ) {
-
-		return QuadraticBezierP0( t, p0 ) + QuadraticBezierP1( t, p1 ) +
-			QuadraticBezierP2( t, p2 );
-
-	}
-
-	//
-
-	function CubicBezierP0( t, p ) {
-
-		const k = 1 - t;
-		return k * k * k * p;
-
-	}
-
-	function CubicBezierP1( t, p ) {
-
-		const k = 1 - t;
-		return 3 * k * k * t * p;
-
-	}
-
-	function CubicBezierP2( t, p ) {
-
-		return 3 * ( 1 - t ) * t * t * p;
-
-	}
-
-	function CubicBezierP3( t, p ) {
-
-		return t * t * t * p;
-
-	}
-
-	function CubicBezier( t, p0, p1, p2, p3 ) {
-
-		return CubicBezierP0( t, p0 ) + CubicBezierP1( t, p1 ) + CubicBezierP2( t, p2 ) +
-			CubicBezierP3( t, p3 );
-
-	}
-
-	class CubicBezierCurve extends Curve {
-
-		constructor( v0 = new Vector2(), v1 = new Vector2(), v2 = new Vector2(), v3 = new Vector2() ) {
-
-			super();
-
-			this.type = 'CubicBezierCurve';
-
-			this.v0 = v0;
-			this.v1 = v1;
-			this.v2 = v2;
-			this.v3 = v3;
-
-		}
-
-		getPoint( t, optionalTarget = new Vector2() ) {
-
-			const point = optionalTarget;
-
-			const v0 = this.v0, v1 = this.v1, v2 = this.v2, v3 = this.v3;
-
-			point.set(
-				CubicBezier( t, v0.x, v1.x, v2.x, v3.x ),
-				CubicBezier( t, v0.y, v1.y, v2.y, v3.y )
-			);
-
-			return point;
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.v0.copy( source.v0 );
-			this.v1.copy( source.v1 );
-			this.v2.copy( source.v2 );
-			this.v3.copy( source.v3 );
-
-			return this;
-
-		}
-
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.v0 = this.v0.toArray();
-			data.v1 = this.v1.toArray();
-			data.v2 = this.v2.toArray();
-			data.v3 = this.v3.toArray();
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.v0.fromArray( json.v0 );
-			this.v1.fromArray( json.v1 );
-			this.v2.fromArray( json.v2 );
-			this.v3.fromArray( json.v3 );
-
-			return this;
-
-		}
-
-	}
-
-	CubicBezierCurve.prototype.isCubicBezierCurve = true;
-
-	class CubicBezierCurve3 extends Curve {
-
-		constructor( v0 = new Vector3(), v1 = new Vector3(), v2 = new Vector3(), v3 = new Vector3() ) {
-
-			super();
-
-			this.type = 'CubicBezierCurve3';
-
-			this.v0 = v0;
-			this.v1 = v1;
-			this.v2 = v2;
-			this.v3 = v3;
-
-		}
-
-		getPoint( t, optionalTarget = new Vector3() ) {
-
-			const point = optionalTarget;
-
-			const v0 = this.v0, v1 = this.v1, v2 = this.v2, v3 = this.v3;
-
-			point.set(
-				CubicBezier( t, v0.x, v1.x, v2.x, v3.x ),
-				CubicBezier( t, v0.y, v1.y, v2.y, v3.y ),
-				CubicBezier( t, v0.z, v1.z, v2.z, v3.z )
-			);
-
-			return point;
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.v0.copy( source.v0 );
-			this.v1.copy( source.v1 );
-			this.v2.copy( source.v2 );
-			this.v3.copy( source.v3 );
-
-			return this;
-
-		}
-
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.v0 = this.v0.toArray();
-			data.v1 = this.v1.toArray();
-			data.v2 = this.v2.toArray();
-			data.v3 = this.v3.toArray();
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.v0.fromArray( json.v0 );
-			this.v1.fromArray( json.v1 );
-			this.v2.fromArray( json.v2 );
-			this.v3.fromArray( json.v3 );
-
-			return this;
-
-		}
-
-	}
-
-	CubicBezierCurve3.prototype.isCubicBezierCurve3 = true;
-
-	class LineCurve extends Curve {
-
-		constructor( v1 = new Vector2(), v2 = new Vector2() ) {
-
-			super();
-
-			this.type = 'LineCurve';
-
-			this.v1 = v1;
-			this.v2 = v2;
-
-		}
-
-		getPoint( t, optionalTarget = new Vector2() ) {
-
-			const point = optionalTarget;
-
-			if ( t === 1 ) {
-
-				point.copy( this.v2 );
-
-			} else {
-
-				point.copy( this.v2 ).sub( this.v1 );
-				point.multiplyScalar( t ).add( this.v1 );
-
-			}
-
-			return point;
-
-		}
-
-		// Line curve is linear, so we can overwrite default getPointAt
-		getPointAt( u, optionalTarget ) {
-
-			return this.getPoint( u, optionalTarget );
-
-		}
-
-		getTangent( t, optionalTarget ) {
-
-			const tangent = optionalTarget || new Vector2();
-
-			tangent.copy( this.v2 ).sub( this.v1 ).normalize();
-
-			return tangent;
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.v1.copy( source.v1 );
-			this.v2.copy( source.v2 );
-
-			return this;
-
-		}
-
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.v1 = this.v1.toArray();
-			data.v2 = this.v2.toArray();
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.v1.fromArray( json.v1 );
-			this.v2.fromArray( json.v2 );
-
-			return this;
-
-		}
-
-	}
-
-	LineCurve.prototype.isLineCurve = true;
-
-	class LineCurve3 extends Curve {
-
-		constructor( v1 = new Vector3(), v2 = new Vector3() ) {
-
-			super();
-
-			this.type = 'LineCurve3';
-			this.isLineCurve3 = true;
-
-			this.v1 = v1;
-			this.v2 = v2;
-
-		}
-		getPoint( t, optionalTarget = new Vector3() ) {
-
-			const point = optionalTarget;
-
-			if ( t === 1 ) {
-
-				point.copy( this.v2 );
-
-			} else {
-
-				point.copy( this.v2 ).sub( this.v1 );
-				point.multiplyScalar( t ).add( this.v1 );
-
-			}
-
-			return point;
-
-		}
-		// Line curve is linear, so we can overwrite default getPointAt
-		getPointAt( u, optionalTarget ) {
-
-			return this.getPoint( u, optionalTarget );
-
-		}
-		copy( source ) {
-
-			super.copy( source );
-
-			this.v1.copy( source.v1 );
-			this.v2.copy( source.v2 );
-
-			return this;
-
-		}
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.v1 = this.v1.toArray();
-			data.v2 = this.v2.toArray();
-
-			return data;
-
-		}
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.v1.fromArray( json.v1 );
-			this.v2.fromArray( json.v2 );
-
-			return this;
-
-		}
-
-	}
-
-	class QuadraticBezierCurve extends Curve {
-
-		constructor( v0 = new Vector2(), v1 = new Vector2(), v2 = new Vector2() ) {
-
-			super();
-
-			this.type = 'QuadraticBezierCurve';
-
-			this.v0 = v0;
-			this.v1 = v1;
-			this.v2 = v2;
-
-		}
-
-		getPoint( t, optionalTarget = new Vector2() ) {
-
-			const point = optionalTarget;
-
-			const v0 = this.v0, v1 = this.v1, v2 = this.v2;
-
-			point.set(
-				QuadraticBezier( t, v0.x, v1.x, v2.x ),
-				QuadraticBezier( t, v0.y, v1.y, v2.y )
-			);
-
-			return point;
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.v0.copy( source.v0 );
-			this.v1.copy( source.v1 );
-			this.v2.copy( source.v2 );
-
-			return this;
-
-		}
-
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.v0 = this.v0.toArray();
-			data.v1 = this.v1.toArray();
-			data.v2 = this.v2.toArray();
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.v0.fromArray( json.v0 );
-			this.v1.fromArray( json.v1 );
-			this.v2.fromArray( json.v2 );
-
-			return this;
-
-		}
-
-	}
-
-	QuadraticBezierCurve.prototype.isQuadraticBezierCurve = true;
-
-	class QuadraticBezierCurve3 extends Curve {
-
-		constructor( v0 = new Vector3(), v1 = new Vector3(), v2 = new Vector3() ) {
-
-			super();
-
-			this.type = 'QuadraticBezierCurve3';
-
-			this.v0 = v0;
-			this.v1 = v1;
-			this.v2 = v2;
-
-		}
-
-		getPoint( t, optionalTarget = new Vector3() ) {
-
-			const point = optionalTarget;
-
-			const v0 = this.v0, v1 = this.v1, v2 = this.v2;
-
-			point.set(
-				QuadraticBezier( t, v0.x, v1.x, v2.x ),
-				QuadraticBezier( t, v0.y, v1.y, v2.y ),
-				QuadraticBezier( t, v0.z, v1.z, v2.z )
-			);
-
-			return point;
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.v0.copy( source.v0 );
-			this.v1.copy( source.v1 );
-			this.v2.copy( source.v2 );
-
-			return this;
-
-		}
-
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.v0 = this.v0.toArray();
-			data.v1 = this.v1.toArray();
-			data.v2 = this.v2.toArray();
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.v0.fromArray( json.v0 );
-			this.v1.fromArray( json.v1 );
-			this.v2.fromArray( json.v2 );
-
-			return this;
-
-		}
-
-	}
-
-	QuadraticBezierCurve3.prototype.isQuadraticBezierCurve3 = true;
-
-	class SplineCurve extends Curve {
-
-		constructor( points = [] ) {
-
-			super();
-
-			this.type = 'SplineCurve';
-
-			this.points = points;
-
-		}
-
-		getPoint( t, optionalTarget = new Vector2() ) {
-
-			const point = optionalTarget;
-
-			const points = this.points;
-			const p = ( points.length - 1 ) * t;
-
-			const intPoint = Math.floor( p );
-			const weight = p - intPoint;
-
-			const p0 = points[ intPoint === 0 ? intPoint : intPoint - 1 ];
-			const p1 = points[ intPoint ];
-			const p2 = points[ intPoint > points.length - 2 ? points.length - 1 : intPoint + 1 ];
-			const p3 = points[ intPoint > points.length - 3 ? points.length - 1 : intPoint + 2 ];
-
-			point.set(
-				CatmullRom( weight, p0.x, p1.x, p2.x, p3.x ),
-				CatmullRom( weight, p0.y, p1.y, p2.y, p3.y )
-			);
-
-			return point;
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.points = [];
-
-			for ( let i = 0, l = source.points.length; i < l; i ++ ) {
-
-				const point = source.points[ i ];
-
-				this.points.push( point.clone() );
-
-			}
-
-			return this;
-
-		}
-
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.points = [];
-
-			for ( let i = 0, l = this.points.length; i < l; i ++ ) {
-
-				const point = this.points[ i ];
-				data.points.push( point.toArray() );
-
-			}
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.points = [];
-
-			for ( let i = 0, l = json.points.length; i < l; i ++ ) {
-
-				const point = json.points[ i ];
-				this.points.push( new Vector2().fromArray( point ) );
-
-			}
-
-			return this;
-
-		}
-
-	}
-
-	SplineCurve.prototype.isSplineCurve = true;
-
-	var Curves = /*#__PURE__*/Object.freeze({
-		__proto__: null,
-		ArcCurve: ArcCurve,
-		CatmullRomCurve3: CatmullRomCurve3,
-		CubicBezierCurve: CubicBezierCurve,
-		CubicBezierCurve3: CubicBezierCurve3,
-		EllipseCurve: EllipseCurve,
-		LineCurve: LineCurve,
-		LineCurve3: LineCurve3,
-		QuadraticBezierCurve: QuadraticBezierCurve,
-		QuadraticBezierCurve3: QuadraticBezierCurve3,
-		SplineCurve: SplineCurve
-	});
-
-	/**************************************************************
-	 *	Curved Path - a curve path is simply a array of connected
-	 *  curves, but retains the api of a curve
-	 **************************************************************/
-
-	class CurvePath extends Curve {
-
-		constructor() {
-
-			super();
-
-			this.type = 'CurvePath';
-
-			this.curves = [];
-			this.autoClose = false; // Automatically closes the path
-
-		}
-
-		add( curve ) {
-
-			this.curves.push( curve );
-
-		}
-
-		closePath() {
-
-			// Add a line curve if start and end of lines are not connected
-			const startPoint = this.curves[ 0 ].getPoint( 0 );
-			const endPoint = this.curves[ this.curves.length - 1 ].getPoint( 1 );
-
-			if ( ! startPoint.equals( endPoint ) ) {
-
-				this.curves.push( new LineCurve( endPoint, startPoint ) );
-
-			}
-
-		}
-
-		// To get accurate point with reference to
-		// entire path distance at time t,
-		// following has to be done:
-
-		// 1. Length of each sub path have to be known
-		// 2. Locate and identify type of curve
-		// 3. Get t for the curve
-		// 4. Return curve.getPointAt(t')
-
-		getPoint( t ) {
-
-			const d = t * this.getLength();
-			const curveLengths = this.getCurveLengths();
-			let i = 0;
-
-			// To think about boundaries points.
-
-			while ( i < curveLengths.length ) {
-
-				if ( curveLengths[ i ] >= d ) {
-
-					const diff = curveLengths[ i ] - d;
-					const curve = this.curves[ i ];
-
-					const segmentLength = curve.getLength();
-					const u = segmentLength === 0 ? 0 : 1 - diff / segmentLength;
-
-					return curve.getPointAt( u );
-
-				}
-
-				i ++;
-
-			}
-
-			return null;
-
-			// loop where sum != 0, sum > d , sum+1 <d
-
-		}
-
-		// We cannot use the default THREE.Curve getPoint() with getLength() because in
-		// THREE.Curve, getLength() depends on getPoint() but in THREE.CurvePath
-		// getPoint() depends on getLength
-
-		getLength() {
-
-			const lens = this.getCurveLengths();
-			return lens[ lens.length - 1 ];
-
-		}
-
-		// cacheLengths must be recalculated.
-		updateArcLengths() {
-
-			this.needsUpdate = true;
-			this.cacheLengths = null;
-			this.getCurveLengths();
-
-		}
-
-		// Compute lengths and cache them
-		// We cannot overwrite getLengths() because UtoT mapping uses it.
-
-		getCurveLengths() {
-
-			// We use cache values if curves and cache array are same length
-
-			if ( this.cacheLengths && this.cacheLengths.length === this.curves.length ) {
-
-				return this.cacheLengths;
-
-			}
-
-			// Get length of sub-curve
-			// Push sums into cached array
-
-			const lengths = [];
-			let sums = 0;
-
-			for ( let i = 0, l = this.curves.length; i < l; i ++ ) {
-
-				sums += this.curves[ i ].getLength();
-				lengths.push( sums );
-
-			}
-
-			this.cacheLengths = lengths;
-
-			return lengths;
-
-		}
-
-		getSpacedPoints( divisions = 40 ) {
-
-			const points = [];
-
-			for ( let i = 0; i <= divisions; i ++ ) {
-
-				points.push( this.getPoint( i / divisions ) );
-
-			}
-
-			if ( this.autoClose ) {
-
-				points.push( points[ 0 ] );
-
-			}
-
-			return points;
-
-		}
-
-		getPoints( divisions = 12 ) {
-
-			const points = [];
-			let last;
-
-			for ( let i = 0, curves = this.curves; i < curves.length; i ++ ) {
-
-				const curve = curves[ i ];
-				const resolution = ( curve && curve.isEllipseCurve ) ? divisions * 2
-					: ( curve && ( curve.isLineCurve || curve.isLineCurve3 ) ) ? 1
-						: ( curve && curve.isSplineCurve ) ? divisions * curve.points.length
-							: divisions;
-
-				const pts = curve.getPoints( resolution );
-
-				for ( let j = 0; j < pts.length; j ++ ) {
-
-					const point = pts[ j ];
-
-					if ( last && last.equals( point ) ) continue; // ensures no consecutive points are duplicates
-
-					points.push( point );
-					last = point;
-
-				}
-
-			}
-
-			if ( this.autoClose && points.length > 1 && ! points[ points.length - 1 ].equals( points[ 0 ] ) ) {
-
-				points.push( points[ 0 ] );
-
-			}
-
-			return points;
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.curves = [];
-
-			for ( let i = 0, l = source.curves.length; i < l; i ++ ) {
-
-				const curve = source.curves[ i ];
-
-				this.curves.push( curve.clone() );
-
-			}
-
-			this.autoClose = source.autoClose;
-
-			return this;
-
-		}
-
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.autoClose = this.autoClose;
-			data.curves = [];
-
-			for ( let i = 0, l = this.curves.length; i < l; i ++ ) {
-
-				const curve = this.curves[ i ];
-				data.curves.push( curve.toJSON() );
-
-			}
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.autoClose = json.autoClose;
-			this.curves = [];
-
-			for ( let i = 0, l = json.curves.length; i < l; i ++ ) {
-
-				const curve = json.curves[ i ];
-				this.curves.push( new Curves[ curve.type ]().fromJSON( curve ) );
-
-			}
-
-			return this;
-
-		}
-
-	}
-
-	class Path extends CurvePath {
-
-		constructor( points ) {
-
-			super();
-			this.type = 'Path';
-
-			this.currentPoint = new Vector2();
-
-			if ( points ) {
-
-				this.setFromPoints( points );
-
-			}
-
-		}
-
-		setFromPoints( points ) {
-
-			this.moveTo( points[ 0 ].x, points[ 0 ].y );
-
-			for ( let i = 1, l = points.length; i < l; i ++ ) {
-
-				this.lineTo( points[ i ].x, points[ i ].y );
-
-			}
-
-			return this;
-
-		}
-
-		moveTo( x, y ) {
-
-			this.currentPoint.set( x, y ); // TODO consider referencing vectors instead of copying?
-
-			return this;
-
-		}
-
-		lineTo( x, y ) {
-
-			const curve = new LineCurve( this.currentPoint.clone(), new Vector2( x, y ) );
-			this.curves.push( curve );
-
-			this.currentPoint.set( x, y );
-
-			return this;
-
-		}
-
-		quadraticCurveTo( aCPx, aCPy, aX, aY ) {
-
-			const curve = new QuadraticBezierCurve(
-				this.currentPoint.clone(),
-				new Vector2( aCPx, aCPy ),
-				new Vector2( aX, aY )
-			);
-
-			this.curves.push( curve );
-
-			this.currentPoint.set( aX, aY );
-
-			return this;
-
-		}
-
-		bezierCurveTo( aCP1x, aCP1y, aCP2x, aCP2y, aX, aY ) {
-
-			const curve = new CubicBezierCurve(
-				this.currentPoint.clone(),
-				new Vector2( aCP1x, aCP1y ),
-				new Vector2( aCP2x, aCP2y ),
-				new Vector2( aX, aY )
-			);
-
-			this.curves.push( curve );
-
-			this.currentPoint.set( aX, aY );
-
-			return this;
-
-		}
-
-		splineThru( pts /*Array of Vector*/ ) {
-
-			const npts = [ this.currentPoint.clone() ].concat( pts );
-
-			const curve = new SplineCurve( npts );
-			this.curves.push( curve );
-
-			this.currentPoint.copy( pts[ pts.length - 1 ] );
-
-			return this;
-
-		}
-
-		arc( aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise ) {
-
-			const x0 = this.currentPoint.x;
-			const y0 = this.currentPoint.y;
-
-			this.absarc( aX + x0, aY + y0, aRadius,
-				aStartAngle, aEndAngle, aClockwise );
-
-			return this;
-
-		}
-
-		absarc( aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise ) {
-
-			this.absellipse( aX, aY, aRadius, aRadius, aStartAngle, aEndAngle, aClockwise );
-
-			return this;
-
-		}
-
-		ellipse( aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation ) {
-
-			const x0 = this.currentPoint.x;
-			const y0 = this.currentPoint.y;
-
-			this.absellipse( aX + x0, aY + y0, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation );
-
-			return this;
-
-		}
-
-		absellipse( aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation ) {
-
-			const curve = new EllipseCurve( aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation );
-
-			if ( this.curves.length > 0 ) {
-
-				// if a previous curve is present, attempt to join
-				const firstPoint = curve.getPoint( 0 );
-
-				if ( ! firstPoint.equals( this.currentPoint ) ) {
-
-					this.lineTo( firstPoint.x, firstPoint.y );
-
-				}
-
-			}
-
-			this.curves.push( curve );
-
-			const lastPoint = curve.getPoint( 1 );
-			this.currentPoint.copy( lastPoint );
-
-			return this;
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.currentPoint.copy( source.currentPoint );
-
-			return this;
-
-		}
-
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.currentPoint = this.currentPoint.toArray();
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.currentPoint.fromArray( json.currentPoint );
-
-			return this;
-
-		}
-
-	}
-
-	class Shape extends Path {
-
-		constructor( points ) {
-
-			super( points );
-
-			this.uuid = generateUUID();
-
-			this.type = 'Shape';
-
-			this.holes = [];
-
-		}
-
-		getPointsHoles( divisions ) {
-
-			const holesPts = [];
-
-			for ( let i = 0, l = this.holes.length; i < l; i ++ ) {
-
-				holesPts[ i ] = this.holes[ i ].getPoints( divisions );
-
-			}
-
-			return holesPts;
-
-		}
-
-		// get points of shape and holes (keypoints based on segments parameter)
-
-		extractPoints( divisions ) {
-
-			return {
-
-				shape: this.getPoints( divisions ),
-				holes: this.getPointsHoles( divisions )
-
-			};
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.holes = [];
-
-			for ( let i = 0, l = source.holes.length; i < l; i ++ ) {
-
-				const hole = source.holes[ i ];
-
-				this.holes.push( hole.clone() );
-
-			}
-
-			return this;
-
-		}
-
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.uuid = this.uuid;
-			data.holes = [];
-
-			for ( let i = 0, l = this.holes.length; i < l; i ++ ) {
-
-				const hole = this.holes[ i ];
-				data.holes.push( hole.toJSON() );
-
-			}
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.uuid = json.uuid;
-			this.holes = [];
-
-			for ( let i = 0, l = json.holes.length; i < l; i ++ ) {
-
-				const hole = json.holes[ i ];
-				this.holes.push( new Path().fromJSON( hole ) );
-
-			}
-
-			return this;
-
-		}
-
-	}
-
-	/**
 	 * parameters = {
 	 *  color: <hex>,
 	 *  specular: <hex>,
@@ -76166,83 +74629,1189 @@ void main() {
 
 	MeshPhongMaterial.prototype.isMeshPhongMaterial = true;
 
+	const _box$1 = new Box3$1();
+	const _vector = new Vector3$1();
+
+	class LineSegmentsGeometry extends InstancedBufferGeometry {
+
+		constructor() {
+
+			super();
+
+			this.type = 'LineSegmentsGeometry';
+
+			const positions = [ - 1, 2, 0, 1, 2, 0, - 1, 1, 0, 1, 1, 0, - 1, 0, 0, 1, 0, 0, - 1, - 1, 0, 1, - 1, 0 ];
+			const uvs = [ - 1, 2, 1, 2, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 2, 1, - 2 ];
+			const index = [ 0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5 ];
+
+			this.setIndex( index );
+			this.setAttribute( 'position', new Float32BufferAttribute$1( positions, 3 ) );
+			this.setAttribute( 'uv', new Float32BufferAttribute$1( uvs, 2 ) );
+
+		}
+
+		applyMatrix4( matrix ) {
+
+			const start = this.attributes.instanceStart;
+			const end = this.attributes.instanceEnd;
+
+			if ( start !== undefined ) {
+
+				start.applyMatrix4( matrix );
+
+				end.applyMatrix4( matrix );
+
+				start.needsUpdate = true;
+
+			}
+
+			if ( this.boundingBox !== null ) {
+
+				this.computeBoundingBox();
+
+			}
+
+			if ( this.boundingSphere !== null ) {
+
+				this.computeBoundingSphere();
+
+			}
+
+			return this;
+
+		}
+
+		setPositions( array ) {
+
+			let lineSegments;
+
+			if ( array instanceof Float32Array ) {
+
+				lineSegments = array;
+
+			} else if ( Array.isArray( array ) ) {
+
+				lineSegments = new Float32Array( array );
+
+			}
+
+			const instanceBuffer = new InstancedInterleavedBuffer( lineSegments, 6, 1 ); // xyz, xyz
+
+			this.setAttribute( 'instanceStart', new InterleavedBufferAttribute( instanceBuffer, 3, 0 ) ); // xyz
+			this.setAttribute( 'instanceEnd', new InterleavedBufferAttribute( instanceBuffer, 3, 3 ) ); // xyz
+
+			//
+
+			this.computeBoundingBox();
+			this.computeBoundingSphere();
+
+			return this;
+
+		}
+
+		setColors( array ) {
+
+			let colors;
+
+			if ( array instanceof Float32Array ) {
+
+				colors = array;
+
+			} else if ( Array.isArray( array ) ) {
+
+				colors = new Float32Array( array );
+
+			}
+
+			const instanceColorBuffer = new InstancedInterleavedBuffer( colors, 6, 1 ); // rgb, rgb
+
+			this.setAttribute( 'instanceColorStart', new InterleavedBufferAttribute( instanceColorBuffer, 3, 0 ) ); // rgb
+			this.setAttribute( 'instanceColorEnd', new InterleavedBufferAttribute( instanceColorBuffer, 3, 3 ) ); // rgb
+
+			return this;
+
+		}
+
+		fromWireframeGeometry( geometry ) {
+
+			this.setPositions( geometry.attributes.position.array );
+
+			return this;
+
+		}
+
+		fromEdgesGeometry( geometry ) {
+
+			this.setPositions( geometry.attributes.position.array );
+
+			return this;
+
+		}
+
+		fromMesh( mesh ) {
+
+			this.fromWireframeGeometry( new WireframeGeometry( mesh.geometry ) );
+
+			// set colors, maybe
+
+			return this;
+
+		}
+
+		fromLineSegments( lineSegments ) {
+
+			const geometry = lineSegments.geometry;
+
+			if ( geometry.isGeometry ) {
+
+				console.error( 'THREE.LineSegmentsGeometry no longer supports Geometry. Use THREE.BufferGeometry instead.' );
+				return;
+
+			} else if ( geometry.isBufferGeometry ) {
+
+				this.setPositions( geometry.attributes.position.array ); // assumes non-indexed
+
+			}
+
+			// set colors, maybe
+
+			return this;
+
+		}
+
+		computeBoundingBox() {
+
+			if ( this.boundingBox === null ) {
+
+				this.boundingBox = new Box3$1();
+
+			}
+
+			const start = this.attributes.instanceStart;
+			const end = this.attributes.instanceEnd;
+
+			if ( start !== undefined && end !== undefined ) {
+
+				this.boundingBox.setFromBufferAttribute( start );
+
+				_box$1.setFromBufferAttribute( end );
+
+				this.boundingBox.union( _box$1 );
+
+			}
+
+		}
+
+		computeBoundingSphere() {
+
+			if ( this.boundingSphere === null ) {
+
+				this.boundingSphere = new Sphere$1();
+
+			}
+
+			if ( this.boundingBox === null ) {
+
+				this.computeBoundingBox();
+
+			}
+
+			const start = this.attributes.instanceStart;
+			const end = this.attributes.instanceEnd;
+
+			if ( start !== undefined && end !== undefined ) {
+
+				const center = this.boundingSphere.center;
+
+				this.boundingBox.getCenter( center );
+
+				let maxRadiusSq = 0;
+
+				for ( let i = 0, il = start.count; i < il; i ++ ) {
+
+					_vector.fromBufferAttribute( start, i );
+					maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector ) );
+
+					_vector.fromBufferAttribute( end, i );
+					maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector ) );
+
+				}
+
+				this.boundingSphere.radius = Math.sqrt( maxRadiusSq );
+
+				if ( isNaN( this.boundingSphere.radius ) ) {
+
+					console.error( 'THREE.LineSegmentsGeometry.computeBoundingSphere(): Computed radius is NaN. The instanced position data is likely to have NaN values.', this );
+
+				}
+
+			}
+
+		}
+
+		toJSON() {
+
+			// todo
+
+		}
+
+		applyMatrix( matrix ) {
+
+			console.warn( 'THREE.LineSegmentsGeometry: applyMatrix() has been renamed to applyMatrix4().' );
+
+			return this.applyMatrix4( matrix );
+
+		}
+
+	}
+
+	LineSegmentsGeometry.prototype.isLineSegmentsGeometry = true;
+
+	class LineGeometry extends LineSegmentsGeometry {
+
+		constructor() {
+
+			super();
+			this.type = 'LineGeometry';
+
+		}
+
+		setPositions( array ) {
+
+			// converts [ x1, y1, z1,  x2, y2, z2, ... ] to pairs format
+
+			var length = array.length - 3;
+			var points = new Float32Array( 2 * length );
+
+			for ( var i = 0; i < length; i += 3 ) {
+
+				points[ 2 * i ] = array[ i ];
+				points[ 2 * i + 1 ] = array[ i + 1 ];
+				points[ 2 * i + 2 ] = array[ i + 2 ];
+
+				points[ 2 * i + 3 ] = array[ i + 3 ];
+				points[ 2 * i + 4 ] = array[ i + 4 ];
+				points[ 2 * i + 5 ] = array[ i + 5 ];
+
+			}
+
+			super.setPositions( points );
+
+			return this;
+
+		}
+
+		setColors( array ) {
+
+			// converts [ r1, g1, b1,  r2, g2, b2, ... ] to pairs format
+
+			var length = array.length - 3;
+			var colors = new Float32Array( 2 * length );
+
+			for ( var i = 0; i < length; i += 3 ) {
+
+				colors[ 2 * i ] = array[ i ];
+				colors[ 2 * i + 1 ] = array[ i + 1 ];
+				colors[ 2 * i + 2 ] = array[ i + 2 ];
+
+				colors[ 2 * i + 3 ] = array[ i + 3 ];
+				colors[ 2 * i + 4 ] = array[ i + 4 ];
+				colors[ 2 * i + 5 ] = array[ i + 5 ];
+
+			}
+
+			super.setColors( colors );
+
+			return this;
+
+		}
+
+		fromLine( line ) {
+
+			var geometry = line.geometry;
+
+			if ( geometry.isGeometry ) {
+
+				console.error( 'THREE.LineGeometry no longer supports Geometry. Use THREE.BufferGeometry instead.' );
+				return;
+
+			} else if ( geometry.isBufferGeometry ) {
+
+				this.setPositions( geometry.attributes.position.array ); // assumes non-indexed
+
+			}
+
+			// set colors, maybe
+
+			return this;
+
+		}
+
+	}
+
+	LineGeometry.prototype.isLineGeometry = true;
+
+	/**
+	 * parameters = {
+	 *  color: <hex>,
+	 *  linewidth: <float>,
+	 *  dashed: <boolean>,
+	 *  dashScale: <float>,
+	 *  dashSize: <float>,
+	 *  dashOffset: <float>,
+	 *  gapSize: <float>,
+	 *  resolution: <Vector2>, // to be set by renderer
+	 * }
+	 */
+
+	UniformsLib$1.line = {
+
+		linewidth: { value: 1 },
+		resolution: { value: new Vector2$1( 1, 1 ) },
+		dashScale: { value: 1 },
+		dashSize: { value: 1 },
+		dashOffset: { value: 0 },
+		gapSize: { value: 1 }, // todo FIX - maybe change to totalSize
+		opacity: { value: 1 }
+
+	};
+
+	ShaderLib$1[ 'line' ] = {
+
+		uniforms: UniformsUtils$1.merge( [
+			UniformsLib$1.common,
+			UniformsLib$1.fog,
+			UniformsLib$1.line
+		] ),
+
+		vertexShader: /* glsl */`
+		#include <common>
+		#include <color_pars_vertex>
+		#include <fog_pars_vertex>
+		#include <logdepthbuf_pars_vertex>
+		#include <clipping_planes_pars_vertex>
+
+		uniform float linewidth;
+		uniform vec2 resolution;
+
+		attribute vec3 instanceStart;
+		attribute vec3 instanceEnd;
+
+		attribute vec3 instanceColorStart;
+		attribute vec3 instanceColorEnd;
+
+		varying vec2 vUv;
+
+		#ifdef USE_DASH
+
+			uniform float dashScale;
+			attribute float instanceDistanceStart;
+			attribute float instanceDistanceEnd;
+			varying float vLineDistance;
+
+		#endif
+
+		void trimSegment( const in vec4 start, inout vec4 end ) {
+
+			// trim end segment so it terminates between the camera plane and the near plane
+
+			// conservative estimate of the near plane
+			float a = projectionMatrix[ 2 ][ 2 ]; // 3nd entry in 3th column
+			float b = projectionMatrix[ 3 ][ 2 ]; // 3nd entry in 4th column
+			float nearEstimate = - 0.5 * b / a;
+
+			float alpha = ( nearEstimate - start.z ) / ( end.z - start.z );
+
+			end.xyz = mix( start.xyz, end.xyz, alpha );
+
+		}
+
+		void main() {
+
+			#ifdef USE_COLOR
+
+				vColor.xyz = ( position.y < 0.5 ) ? instanceColorStart : instanceColorEnd;
+
+			#endif
+
+			#ifdef USE_DASH
+
+				vLineDistance = ( position.y < 0.5 ) ? dashScale * instanceDistanceStart : dashScale * instanceDistanceEnd;
+
+			#endif
+
+			float aspect = resolution.x / resolution.y;
+
+			vUv = uv;
+
+			// camera space
+			vec4 start = modelViewMatrix * vec4( instanceStart, 1.0 );
+			vec4 end = modelViewMatrix * vec4( instanceEnd, 1.0 );
+
+			// special case for perspective projection, and segments that terminate either in, or behind, the camera plane
+			// clearly the gpu firmware has a way of addressing this issue when projecting into ndc space
+			// but we need to perform ndc-space calculations in the shader, so we must address this issue directly
+			// perhaps there is a more elegant solution -- WestLangley
+
+			bool perspective = ( projectionMatrix[ 2 ][ 3 ] == - 1.0 ); // 4th entry in the 3rd column
+
+			if ( perspective ) {
+
+				if ( start.z < 0.0 && end.z >= 0.0 ) {
+
+					trimSegment( start, end );
+
+				} else if ( end.z < 0.0 && start.z >= 0.0 ) {
+
+					trimSegment( end, start );
+
+				}
+
+			}
+
+			// clip space
+			vec4 clipStart = projectionMatrix * start;
+			vec4 clipEnd = projectionMatrix * end;
+
+			// ndc space
+			vec2 ndcStart = clipStart.xy / clipStart.w;
+			vec2 ndcEnd = clipEnd.xy / clipEnd.w;
+
+			// direction
+			vec2 dir = ndcEnd - ndcStart;
+
+			// account for clip-space aspect ratio
+			dir.x *= aspect;
+			dir = normalize( dir );
+
+			// perpendicular to dir
+			vec2 offset = vec2( dir.y, - dir.x );
+
+			// undo aspect ratio adjustment
+			dir.x /= aspect;
+			offset.x /= aspect;
+
+			// sign flip
+			if ( position.x < 0.0 ) offset *= - 1.0;
+
+			// endcaps
+			if ( position.y < 0.0 ) {
+
+				offset += - dir;
+
+			} else if ( position.y > 1.0 ) {
+
+				offset += dir;
+
+			}
+
+			// adjust for linewidth
+			offset *= linewidth;
+
+			// adjust for clip-space to screen-space conversion // maybe resolution should be based on viewport ...
+			offset /= resolution.y;
+
+			// select end
+			vec4 clip = ( position.y < 0.5 ) ? clipStart : clipEnd;
+
+			// back to clip space
+			offset *= clip.w;
+
+			clip.xy += offset;
+
+			gl_Position = clip;
+
+			vec4 mvPosition = ( position.y < 0.5 ) ? start : end; // this is an approximation
+
+			#include <logdepthbuf_vertex>
+			#include <clipping_planes_vertex>
+			#include <fog_vertex>
+
+		}`,
+
+		fragmentShader: /* glsl */`
+		uniform vec3 diffuse;
+		uniform float opacity;
+
+		#ifdef USE_DASH
+
+			uniform float dashSize;
+			uniform float dashOffset;
+			uniform float gapSize;
+
+		#endif
+
+		varying float vLineDistance;
+
+		#include <common>
+		#include <color_pars_fragment>
+		#include <fog_pars_fragment>
+		#include <logdepthbuf_pars_fragment>
+		#include <clipping_planes_pars_fragment>
+
+		varying vec2 vUv;
+
+		void main() {
+
+			#include <clipping_planes_fragment>
+
+			#ifdef USE_DASH
+
+				if ( vUv.y < - 1.0 || vUv.y > 1.0 ) discard; // discard endcaps
+
+				if ( mod( vLineDistance + dashOffset, dashSize + gapSize ) > dashSize ) discard; // todo - FIX
+
+			#endif
+
+			float alpha = 1.0;
+
+			#ifdef ALPHA_TO_COVERAGE
+
+			// artifacts appear on some hardware if a derivative is taken within a conditional
+			float a = vUv.x;
+			float b = ( vUv.y > 0.0 ) ? vUv.y - 1.0 : vUv.y + 1.0;
+			float len2 = a * a + b * b;
+			float dlen = fwidth( len2 );
+
+			if ( abs( vUv.y ) > 1.0 ) {
+
+				alpha = 1.0 - smoothstep( 1.0 - dlen, 1.0 + dlen, len2 );
+
+			}
+
+			#else
+
+			if ( abs( vUv.y ) > 1.0 ) {
+
+				float a = vUv.x;
+				float b = ( vUv.y > 0.0 ) ? vUv.y - 1.0 : vUv.y + 1.0;
+				float len2 = a * a + b * b;
+
+				if ( len2 > 1.0 ) discard;
+
+			}
+
+			#endif
+
+			vec4 diffuseColor = vec4( diffuse, opacity * alpha );
+
+			#include <logdepthbuf_fragment>
+			#include <color_fragment>
+
+			gl_FragColor = diffuseColor;
+
+			#include <tonemapping_fragment>
+			#include <encodings_fragment>
+			#include <fog_fragment>
+			#include <premultiplied_alpha_fragment>
+
+		}`
+
+	};
+
+	class LineMaterial extends ShaderMaterial$1 {
+
+		constructor( parameters ) {
+
+			super( {
+
+				type: 'LineMaterial',
+
+				uniforms: UniformsUtils$1.clone( ShaderLib$1[ 'line' ].uniforms ),
+
+				vertexShader: ShaderLib$1[ 'line' ].vertexShader,
+				fragmentShader: ShaderLib$1[ 'line' ].fragmentShader,
+
+				clipping: true // required for clipping support
+
+			} );
+
+			Object.defineProperties( this, {
+
+				color: {
+
+					enumerable: true,
+
+					get: function () {
+
+						return this.uniforms.diffuse.value;
+
+					},
+
+					set: function ( value ) {
+
+						this.uniforms.diffuse.value = value;
+
+					}
+
+				},
+
+				linewidth: {
+
+					enumerable: true,
+
+					get: function () {
+
+						return this.uniforms.linewidth.value;
+
+					},
+
+					set: function ( value ) {
+
+						this.uniforms.linewidth.value = value;
+
+					}
+
+				},
+
+				dashed: {
+
+					enumerable: true,
+
+					get: function () {
+
+						return Boolean( 'USE_DASH' in this.defines );
+
+					},
+
+					set( value ) {
+
+						if ( Boolean( value ) !== Boolean( 'USE_DASH' in this.defines ) ) {
+
+							this.needsUpdate = true;
+
+						}
+
+						if ( value === true ) {
+
+							this.defines.USE_DASH = '';
+
+						} else {
+
+							delete this.defines.USE_DASH;
+
+						}
+
+					}
+
+				},
+
+				dashScale: {
+
+					enumerable: true,
+
+					get: function () {
+
+						return this.uniforms.dashScale.value;
+
+					},
+
+					set: function ( value ) {
+
+						this.uniforms.dashScale.value = value;
+
+					}
+
+				},
+
+				dashSize: {
+
+					enumerable: true,
+
+					get: function () {
+
+						return this.uniforms.dashSize.value;
+
+					},
+
+					set: function ( value ) {
+
+						this.uniforms.dashSize.value = value;
+
+					}
+
+				},
+
+				dashOffset: {
+
+					enumerable: true,
+
+					get: function () {
+
+						return this.uniforms.dashOffset.value;
+
+					},
+
+					set: function ( value ) {
+
+						this.uniforms.dashOffset.value = value;
+
+					}
+
+				},
+
+				gapSize: {
+
+					enumerable: true,
+
+					get: function () {
+
+						return this.uniforms.gapSize.value;
+
+					},
+
+					set: function ( value ) {
+
+						this.uniforms.gapSize.value = value;
+
+					}
+
+				},
+
+				opacity: {
+
+					enumerable: true,
+
+					get: function () {
+
+						return this.uniforms.opacity.value;
+
+					},
+
+					set: function ( value ) {
+
+						this.uniforms.opacity.value = value;
+
+					}
+
+				},
+
+				resolution: {
+
+					enumerable: true,
+
+					get: function () {
+
+						return this.uniforms.resolution.value;
+
+					},
+
+					set: function ( value ) {
+
+						this.uniforms.resolution.value.copy( value );
+
+					}
+
+				},
+
+				alphaToCoverage: {
+
+					enumerable: true,
+
+					get: function () {
+
+						return Boolean( 'ALPHA_TO_COVERAGE' in this.defines );
+
+					},
+
+					set: function ( value ) {
+
+						if ( Boolean( value ) !== Boolean( 'ALPHA_TO_COVERAGE' in this.defines ) ) {
+
+							this.needsUpdate = true;
+
+						}
+
+						if ( value === true ) {
+
+							this.defines.ALPHA_TO_COVERAGE = '';
+							this.extensions.derivatives = true;
+
+						} else {
+
+							delete this.defines.ALPHA_TO_COVERAGE;
+							this.extensions.derivatives = false;
+
+						}
+
+					}
+
+				}
+
+			} );
+
+			this.setValues( parameters );
+
+		}
+
+	}
+
+	LineMaterial.prototype.isLineMaterial = true;
+
+	const _start = new Vector3$1();
+	const _end = new Vector3$1();
+
+	const _start4 = new Vector4$1();
+	const _end4 = new Vector4$1();
+
+	const _ssOrigin = new Vector4$1();
+	const _ssOrigin3 = new Vector3$1();
+	const _mvMatrix = new Matrix4$1();
+	const _line = new Line3();
+	const _closestPoint = new Vector3$1();
+
+	const _box = new Box3$1();
+	const _sphere = new Sphere$1();
+	const _clipToWorldVector = new Vector4$1();
+
+	class LineSegments2 extends Mesh$1 {
+
+		constructor( geometry = new LineSegmentsGeometry(), material = new LineMaterial( { color: Math.random() * 0xffffff } ) ) {
+
+			super( geometry, material );
+
+			this.type = 'LineSegments2';
+
+		}
+
+		// for backwards-compatability, but could be a method of LineSegmentsGeometry...
+
+		computeLineDistances() {
+
+			const geometry = this.geometry;
+
+			const instanceStart = geometry.attributes.instanceStart;
+			const instanceEnd = geometry.attributes.instanceEnd;
+			const lineDistances = new Float32Array( 2 * instanceStart.count );
+
+			for ( let i = 0, j = 0, l = instanceStart.count; i < l; i ++, j += 2 ) {
+
+				_start.fromBufferAttribute( instanceStart, i );
+				_end.fromBufferAttribute( instanceEnd, i );
+
+				lineDistances[ j ] = ( j === 0 ) ? 0 : lineDistances[ j - 1 ];
+				lineDistances[ j + 1 ] = lineDistances[ j ] + _start.distanceTo( _end );
+
+			}
+
+			const instanceDistanceBuffer = new InstancedInterleavedBuffer( lineDistances, 2, 1 ); // d0, d1
+
+			geometry.setAttribute( 'instanceDistanceStart', new InterleavedBufferAttribute( instanceDistanceBuffer, 1, 0 ) ); // d0
+			geometry.setAttribute( 'instanceDistanceEnd', new InterleavedBufferAttribute( instanceDistanceBuffer, 1, 1 ) ); // d1
+
+			return this;
+
+		}
+
+		raycast( raycaster, intersects ) {
+
+			if ( raycaster.camera === null ) {
+
+				console.error( 'LineSegments2: "Raycaster.camera" needs to be set in order to raycast against LineSegments2.' );
+
+			}
+
+			const threshold = ( raycaster.params.Line2 !== undefined ) ? raycaster.params.Line2.threshold || 0 : 0;
+
+			const ray = raycaster.ray;
+			const camera = raycaster.camera;
+			const projectionMatrix = camera.projectionMatrix;
+
+			const matrixWorld = this.matrixWorld;
+			const geometry = this.geometry;
+			const material = this.material;
+			const resolution = material.resolution;
+			const lineWidth = material.linewidth + threshold;
+
+			const instanceStart = geometry.attributes.instanceStart;
+			const instanceEnd = geometry.attributes.instanceEnd;
+
+			// camera forward is negative
+			const near = - camera.near;
+
+			// clip space is [ - 1, 1 ] so multiply by two to get the full
+			// width in clip space
+			const ssMaxWidth = 2.0 * Math.max( lineWidth / resolution.width, lineWidth / resolution.height );
+
+			//
+
+			// check if we intersect the sphere bounds
+			if ( geometry.boundingSphere === null ) {
+
+				geometry.computeBoundingSphere();
+
+			}
+
+			_sphere.copy( geometry.boundingSphere ).applyMatrix4( matrixWorld );
+			const distanceToSphere = Math.max( camera.near, _sphere.distanceToPoint( ray.origin ) );
+
+			// get the w component to scale the world space line width
+			_clipToWorldVector.set( 0, 0, - distanceToSphere, 1.0 ).applyMatrix4( camera.projectionMatrix );
+			_clipToWorldVector.multiplyScalar( 1.0 / _clipToWorldVector.w );
+			_clipToWorldVector.applyMatrix4( camera.projectionMatrixInverse );
+
+			// increase the sphere bounds by the worst case line screen space width
+			const sphereMargin = Math.abs( ssMaxWidth / _clipToWorldVector.w ) * 0.5;
+			_sphere.radius += sphereMargin;
+
+			if ( raycaster.ray.intersectsSphere( _sphere ) === false ) {
+
+				return;
+
+			}
+
+			//
+
+			// check if we intersect the box bounds
+			if ( geometry.boundingBox === null ) {
+
+				geometry.computeBoundingBox();
+
+			}
+
+			_box.copy( geometry.boundingBox ).applyMatrix4( matrixWorld );
+			const distanceToBox = Math.max( camera.near, _box.distanceToPoint( ray.origin ) );
+
+			// get the w component to scale the world space line width
+			_clipToWorldVector.set( 0, 0, - distanceToBox, 1.0 ).applyMatrix4( camera.projectionMatrix );
+			_clipToWorldVector.multiplyScalar( 1.0 / _clipToWorldVector.w );
+			_clipToWorldVector.applyMatrix4( camera.projectionMatrixInverse );
+
+			// increase the sphere bounds by the worst case line screen space width
+			const boxMargin = Math.abs( ssMaxWidth / _clipToWorldVector.w ) * 0.5;
+			_box.max.x += boxMargin;
+			_box.max.y += boxMargin;
+			_box.max.z += boxMargin;
+			_box.min.x -= boxMargin;
+			_box.min.y -= boxMargin;
+			_box.min.z -= boxMargin;
+
+			if ( raycaster.ray.intersectsBox( _box ) === false ) {
+
+				return;
+
+			}
+
+			//
+
+			// pick a point 1 unit out along the ray to avoid the ray origin
+			// sitting at the camera origin which will cause "w" to be 0 when
+			// applying the projection matrix.
+			ray.at( 1, _ssOrigin );
+
+			// ndc space [ - 1.0, 1.0 ]
+			_ssOrigin.w = 1;
+			_ssOrigin.applyMatrix4( camera.matrixWorldInverse );
+			_ssOrigin.applyMatrix4( projectionMatrix );
+			_ssOrigin.multiplyScalar( 1 / _ssOrigin.w );
+
+			// screen space
+			_ssOrigin.x *= resolution.x / 2;
+			_ssOrigin.y *= resolution.y / 2;
+			_ssOrigin.z = 0;
+
+			_ssOrigin3.copy( _ssOrigin );
+
+			_mvMatrix.multiplyMatrices( camera.matrixWorldInverse, matrixWorld );
+
+			for ( let i = 0, l = instanceStart.count; i < l; i ++ ) {
+
+				_start4.fromBufferAttribute( instanceStart, i );
+				_end4.fromBufferAttribute( instanceEnd, i );
+
+				_start4.w = 1;
+				_end4.w = 1;
+
+				// camera space
+				_start4.applyMatrix4( _mvMatrix );
+				_end4.applyMatrix4( _mvMatrix );
+
+				// skip the segment if it's entirely behind the camera
+				var isBehindCameraNear = _start4.z > near && _end4.z > near;
+				if ( isBehindCameraNear ) {
+
+					continue;
+
+				}
+
+				// trim the segment if it extends behind camera near
+				if ( _start4.z > near ) {
+
+					const deltaDist = _start4.z - _end4.z;
+					const t = ( _start4.z - near ) / deltaDist;
+					_start4.lerp( _end4, t );
+
+				} else if ( _end4.z > near ) {
+
+					const deltaDist = _end4.z - _start4.z;
+					const t = ( _end4.z - near ) / deltaDist;
+					_end4.lerp( _start4, t );
+
+				}
+
+				// clip space
+				_start4.applyMatrix4( projectionMatrix );
+				_end4.applyMatrix4( projectionMatrix );
+
+				// ndc space [ - 1.0, 1.0 ]
+				_start4.multiplyScalar( 1 / _start4.w );
+				_end4.multiplyScalar( 1 / _end4.w );
+
+				// screen space
+				_start4.x *= resolution.x / 2;
+				_start4.y *= resolution.y / 2;
+
+				_end4.x *= resolution.x / 2;
+				_end4.y *= resolution.y / 2;
+
+				// create 2d segment
+				_line.start.copy( _start4 );
+				_line.start.z = 0;
+
+				_line.end.copy( _end4 );
+				_line.end.z = 0;
+
+				// get closest point on ray to segment
+				const param = _line.closestPointToPointParameter( _ssOrigin3, true );
+				_line.at( param, _closestPoint );
+
+				// check if the intersection point is within clip space
+				const zPos = MathUtils.lerp( _start4.z, _end4.z, param );
+				const isInClipSpace = zPos >= - 1 && zPos <= 1;
+
+				const isInside = _ssOrigin3.distanceTo( _closestPoint ) < lineWidth * 0.5;
+
+				if ( isInClipSpace && isInside ) {
+
+					_line.start.fromBufferAttribute( instanceStart, i );
+					_line.end.fromBufferAttribute( instanceEnd, i );
+
+					_line.start.applyMatrix4( matrixWorld );
+					_line.end.applyMatrix4( matrixWorld );
+
+					const pointOnLine = new Vector3$1();
+					const point = new Vector3$1();
+
+					ray.distanceSqToSegment( _line.start, _line.end, point, pointOnLine );
+
+					intersects.push( {
+
+						point: point,
+						pointOnLine: pointOnLine,
+						distance: ray.origin.distanceTo( point ),
+
+						object: this,
+						face: null,
+						faceIndex: i,
+						uv: null,
+						uv2: null,
+
+					} );
+
+				}
+
+			}
+
+		}
+
+	}
+
+	LineSegments2.prototype.LineSegments2 = true;
+
+	class Line2 extends LineSegments2 {
+
+		constructor( geometry = new LineGeometry(), material = new LineMaterial( { color: Math.random() * 0xffffff } ) ) {
+
+			super( geometry, material );
+
+			this.type = 'Line2';
+
+		}
+
+	}
+
+	Line2.prototype.isLine2 = true;
+
 	//scene
 	let canvas, camera, scene, light, light2, renderer;
-	let objectsArray = [];
+	let lettersArray = [];
+
+	class Letter {
+	    constructor(letter, color, fSize, curveSegments, rotation, position, moveDirection) {
+	        this.name = letter;
+	        this.startAngle = rotation;
+	        this.startPosition = position;
+	        this.moveDirection = moveDirection;
+
+	        const materialExtr = new MeshPhongMaterial({ color: color });
+	        const fontLoader = new FontLoader();
+	        fontLoader.load('Cera Pro_Regular.json', function (font) {
+	            let geometry = new TextGeometry(letter, {
+	                font: font,
+	                size: fSize,
+	                height: 1.5,
+	                curveSegments: curveSegments,
+	                bevelEnabled: true,
+	                bevelThickness: 0.4,
+	                bevelSize: 0.3,
+	                bevelOffset: 0.0,
+	                bevelSegments: 10
+	            });
+	            let mesh = new Mesh(geometry, materialExtr);
+	            mesh.scale.set(1.0, 1.1, 1.0);
+	            mesh.name = letter;
+	            mesh.rotation.setFromVector3(rotation);
+	            mesh.position.copy(position);
+	            mesh.castShadow = true; 
+	            scene.add(mesh);
+	        });
+	    }
+	}
 
 	class App {
 	    init() {
 	        canvas = document.getElementById('main3DCanvas');
-	        canvas.width = window.innerWidth;
-	        canvas.height = window.innerHeight;
+	        canvas.width = document.documentElement.clientWidth;
+	        canvas.height = document.documentElement.clientHeight;
 	        canvas.setAttribute('width', window.innerWidth);
 	        canvas.setAttribute('height', window.innerHeight);
 
 	        //scene and camera
 	        scene = new Scene();
-	        camera = new PerspectiveCamera(40.0, window.innerWidth / window.innerHeight, 0.1, 5000);
+	        camera = new PerspectiveCamera(40.0, canvas.width / canvas.height, 0.1, 5000);
 	        camera.position.set(0, 0, 100);
 
-	        //light
+	        //lights
 	        light = new PointLight(0xffffff, 0.2);
-	        light.position.set(0, 50, 60);
+	        light.position.set(0, 50, 40);
+	        light.castShadow = true;
 	        scene.add(light);
-	        light2 = new AmbientLight(0xffffff, 0.8);
+	        light2 = new AmbientLight(0xffffff, 0.85);
 	        light2.position.set(0, 100, 100);
 	        scene.add(light2);
 
-	        /*
-	                objectsArray.push(new MeshObj(
-	                    new Vector3(10, 10, 10),
-	                    0xf7f7f7,
-	                    new Vector3(0.0, 0.4, -0.5),
-	                    new Vector3(0.0, 20.0, 0.0),
-	                    new Vector3(0.0, 1.0, 0.0)
-	                ));
-	                objectsArray.forEach(element => {
-	                    scene.add(element.mesh)
-	                });*/
+	        //letters
+	        lettersArray.push(new Letter('Q', 0xe6e6e6, 16, 100,
+	            new Vector3(0.2, 0.3, 0.0), new Vector3(-12.0, 20.0, -10.0), new Vector3(0.0, 0.0, 0.0)
+	        ));
+	        lettersArray.push(new Letter('W', 0xe6e6e6, 16, 10,
+	            new Vector3(0.4, -0.4, 0.0), new Vector3(4.0, 10.0, -28.0), new Vector3(0.0, 0.0, 0.0)
+	        ));
+	        lettersArray.push(new Letter('E', 0xe6e6e6, 16, 10,
+	            new Vector3(0.4, -0.6, 0.0), new Vector3(18.0, 0.0, -15.0), new Vector3(0.0, 0.0, 0.0)
+	        ));
+	        lettersArray.push(new Letter('R', 0xe6e6e6, 16, 10,
+	            new Vector3(-0.5, -0.6, 0.0), new Vector3(-4.0, -5.0, 0.0), new Vector3(0.0, 0.0, 0.0)
+	        ));
+	        lettersArray.push(new Letter('T', 0xe6e6e6, 16, 10,
+	            new Vector3(0.1, 0.25, 0.0), new Vector3(8.0, -16.0, 5.0), new Vector3(0.0, 0.0, 0.0)
+	        ));
+	        lettersArray.push(new Letter('A', 0xe6e6e6, 16, 10,
+	            new Vector3(0.2, 0.0, 0.0), new Vector3(0.0, -20.0, 10.0), new Vector3(0.0, 0.0, 0.0)
+	        ));
 
-	        const materialExtr = new MeshPhongMaterial({ color: 0xf7f7f7 });
-
-	        const loader = new FontLoader();
-	        //Arial_Regular
-	        loader.load('Cera Pro Thin_Regular.json', function (font) {
-
-	            const geometry = new TextGeometry('QWERTA', {
-	                font: font,
-	                size: 16,
-	                height: 1,
-	                curveSegments: 100,
-	                bevelEnabled: true,
-	                bevelThickness: 0.5,
-	                bevelSize: 0.5,
-	                bevelOffset: 0.0,
-	                bevelSegments: 10
-	            });
-
-	            let mesh = new Mesh(geometry, materialExtr);
-	            mesh.position.set(-60, 0, 0);
-	            mesh.scale.set(1.0, 1.1, 1.0);
-	            scene.add(mesh);
-	        });
-
-	        let shape = new Shape();
-	        let eps = 0.000001;
-	        let radius0 = 1;
-	        let width = 10;
-	        let height = 10;
-	        let radius = radius0 - eps;
-	        shape.absarc(eps, eps, eps, -Math.PI / 2, -Math.PI, true);
-	        shape.absarc(eps, height - radius * 2, eps, Math.PI, Math.PI / 2, true);
-	        shape.absarc(width - radius * 2, height - radius * 2, eps, Math.PI / 2, 0, true);
-	        shape.absarc(width - radius * 2, eps, eps, 0, -Math.PI / 2, true);
-
-	        const geometry2 = new ShapeGeometry(shape);
-	        new Mesh(geometry2, materialExtr);
-	        //scene.add(mesh2)     
-
-	        const roundedRectShape = new Shape$1();
+	        //frame
+	        const roundedRectShape = new Shape();
 	        (function roundedRect(ctx, x, y, width, height, radius) {
 
 	            ctx.moveTo(x, y + radius);
@@ -76255,82 +75824,73 @@ void main() {
 	            ctx.lineTo(x + radius, y);
 	            ctx.quadraticCurveTo(x, y, x, y + radius);
 
-	        })(roundedRectShape, 0, 0, 10, 10, 5);
+	        })(roundedRectShape, 0, 0, 14, 14, 1);
 
-	        // solid line
+	        const roundedRectShapePoints = roundedRectShape.getPoints();
+	        let FramePoints = [];
+	        
+	        roundedRectShapePoints.forEach(element => {
+	            FramePoints.push(element.x);
+	            FramePoints.push(element.y);
+	            FramePoints.push(0);
+	        });
 
-	        //line.scale.set( 5, 5, 5 );
-	        //scene.add( line );
+	        const lineGeometry = new LineGeometry();
+	        lineGeometry.setPositions( FramePoints );
+	        let matLine = new LineMaterial( {
+	            color: 0xfbfbfb,
+	            linewidth: .002, // in pixels
+	            vertexColors: false,
+	            dashed: false,
+	        } );
+	        let frame = new Line2(lineGeometry, matLine);
+	        frame.computeLineDistances();
+			frame.scale.set( 1, 1, 1 );
+	        frame.position.set(0, 0, 10);
+	        //scene.add(frame);
 
-	        roundedRectShape.autoClose = true;
-
-	        const points = roundedRectShape.getPoints();
-	        const spacedPoints = roundedRectShape.getSpacedPoints(50);
-
-	        const geometryPoints = new BufferGeometry$1().setFromPoints(points);
-	        new BufferGeometry$1().setFromPoints(spacedPoints);
-
-	        new Line(geometryPoints, new LineBasicMaterial({ color: 0xf7f7f7, linewidth: 1 }));
-	        //scene.add( line );
-
+	        //plane
+	        const planeGeometry = new PlaneGeometry$1( 100, 150 );
+	        //const planeMaterial = new THREE.MeshLambertMaterial( {color: 0xffffff} );
+	        const planeMaterial = new ShadowMaterial();
+	        planeMaterial.opacity = 0.01;
+	        let plane = new Mesh$1(planeGeometry, planeMaterial);
+	        plane.rotation.set(-Math.PI * 30.0 / 180.0, 0.0, 0.0);
+	        plane.receiveShadow = true;
+	        scene.add( plane );
+	        
 	        renderer = new WebGLRenderer({ canvas: canvas, antialias: true });
 	        renderer.setClearColor(0xffffff);
+	        renderer.shadowMap.enabled = true;
+	        renderer.shadowMap.type = PCFSoftShadowMap$1; // default THREE.PCFShadowMap
 
 	        renderer.render(scene, camera);
-	        window.addEventListener('resize', onWindowResize, false);
-	        onWindowResize();
+	        //window.addEventListener('resize', onWindowResize, false);
+	        //onWindowResize();
 	        window.addEventListener('mousemove', onMouseMove, false);
-	        window.addEventListener('scroll', onScroll, false);
+	        //window.addEventListener('scroll', onScroll, false);
 
 	        animate();
 	    }
 	}
 
-	function onMouseMove(e) {
-	    let w = window.innerWidth;
-	    let h = window.innerHeight;
-	    let wk = 0.3 * (e.x - w * 0.5) / w;
-	    let hk = 0.3 * (e.y - h * 0.5) / h;
-	    objectsArray.forEach(element => {
-	        element.mesh.rotation.x = element.startAngle.x + hk;
-	        element.mesh.rotation.y = element.startAngle.y + wk;
+	function onMouseMove(e) {    
+	     let w = document.documentElement.clientWidth;
+	    let h = document.documentElement.clientHeight;
+	    let wk = 1 * (e.x - w * 0.5) / w;
+	    let hk = 1 * (e.y - h * 0.5) / h;
+	    lettersArray.forEach(element => {
+	        camera.position.set(10.0 * wk, 0.0 * hk, 100);
+	        camera.lookAt(0, 0, 0);
+	        scene.getObjectByName(element.name).rotation.x = element.startAngle.x + 0.2 * hk;
+	        scene.getObjectByName(element.name).rotation.y = element.startAngle.y + 0.3 * wk;
+	        scene.getObjectByName(element.name).position.z = element.startPosition.z - 3.0 * hk;
 	    });
-	}
-
-	function onWindowResize() {
-	    canvas.width = document.documentElement.clientWidth;//window.innerWidth;
-	    canvas.height = document.documentElement.clientHeight; //window.innerHeight;
-	    canvas.setAttribute('width', document.documentElement.clientWidth);
-	    canvas.setAttribute('height', document.documentElement.clientHeight);
-
-	    camera.aspect = document.documentElement.clientWidth / document.documentElement.clientHeight;
-	    camera.updateProjectionMatrix();
-
-	    renderer.setSize(document.documentElement.clientWidth, document.documentElement.clientHeight);
-
-	    let size = document.documentElement.clientWidth < 500 ? document.documentElement.clientWidth < 400 ? 160 : 120 : 100;
-
-	    objectsArray.forEach(element => {
-	        //element.mesh.scale.copy( new Vector3(size, size, size));
-	        element.mesh.position.copy(element.startPosition);
-	    });
-
-	    camera.position.set(0, 0, size);
 	}
 
 	function animate() {
 	    requestAnimationFrame(animate);
 	    renderer.render(scene, camera);
-	}
-
-	function onScroll(e) {
-	    let distanceToTop = canvas.getBoundingClientRect().top;
-	    let scrollMoveKoeff = -100.0 * (distanceToTop / canvas.height);
-	    objectsArray.forEach(element => {
-	        element.mesh.position.x = element.startPosition.x + element.moveDirection.x * scrollMoveKoeff;
-	        element.mesh.position.y = element.startPosition.y + element.moveDirection.y * scrollMoveKoeff;
-	        element.mesh.position.z = element.startPosition.z + element.moveDirection.z * scrollMoveKoeff;
-	    });
 	}
 
 	const app = new App();
