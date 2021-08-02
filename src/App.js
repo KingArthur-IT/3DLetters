@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+//import * as THREE from 'three';
 import { PerspectiveCamera } from 'three/src/cameras/PerspectiveCamera.js';
 import { Scene } from 'three/src/scenes/Scene.js';
 import { PointLight } from 'three/src/lights/PointLight.js';
@@ -6,16 +6,21 @@ import { AmbientLight } from 'three/src/lights/AmbientLight.js';
 import { Vector3 } from 'three/src/math/Vector3.js';
 import { WebGLRenderer } from 'three/src/renderers/WebGLRenderer.js';
 import { Shape } from 'three/src/extras/core/Shape.js';
-import { ExtrudeGeometry } from 'three/src/geometries/ExtrudeGeometry.js';
 import { MeshPhongMaterial } from 'three/src/materials/MeshPhongMaterial.js';
 import { Mesh } from 'three/src/objects/Mesh.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { FontLoader } from 'three/src/loaders/FontLoader.js';
+import { TextGeometry } from 'three/src/geometries/TextGeometry.js';
+import { PlaneGeometry } from 'three/src/geometries/PlaneGeometry.js';
+import { ShadowMaterial } from 'three/src/materials/ShadowMaterial.js';
 
 //scene
 let canvas, camera, scene, light, light2, renderer;
 let lettersArray = [];
+let FramePoints = [];
+let frames = [];
 
 class Letter {
     constructor(letter, color, fSize, curveSegments, rotation, position, moveDirection) {
@@ -25,9 +30,9 @@ class Letter {
         this.moveDirection = moveDirection;
 
         const materialExtr = new MeshPhongMaterial({ color: color });
-        const fontLoader = new THREE.FontLoader();
+        const fontLoader = new FontLoader();
         fontLoader.load('Cera Pro_Regular.json', function (font) {
-            let geometry = new THREE.TextGeometry(letter, {
+            let geometry = new TextGeometry(letter, {
                 font: font,
                 size: fSize,
                 height: 1.5,
@@ -46,6 +51,32 @@ class Letter {
             mesh.castShadow = true; 
             scene.add(mesh);
         });
+    }
+}
+
+class Frame {
+    constructor(name, color, width, rotation, position, moveDirection) {
+        this.name = name;
+        this.startAngle = rotation;
+        this.startPosition = position;
+        this.moveDirection = moveDirection;
+
+        const lineGeometry = new LineGeometry();
+        lineGeometry.setPositions( FramePoints );
+        let matLine = new LineMaterial( {
+            color: color,
+            linewidth: width, // in pixels
+            vertexColors: false,
+            dashed: false,
+        } );
+        let frame = new Line2(lineGeometry, matLine);
+        frame.computeLineDistances();
+		frame.scale.set( 1, 1, 1 );
+        frame.position.set(0, 0, 10);
+        frame.name = name;
+        frame.rotation.setFromVector3(rotation);
+        frame.position.copy(position);
+        scene.add(frame);
     }
 }
 
@@ -73,16 +104,16 @@ class App {
 
         //letters
         lettersArray.push(new Letter('Q', 0xe6e6e6, 16, 100,
-            new Vector3(0.2, 0.3, 0.0), new Vector3(-12.0, 20.0, -10.0), new Vector3(0.0, 0.0, 0.0)
+            new Vector3(0.2, 0.3, 0.0), new Vector3(-12.0, 19.0, -12.0), new Vector3(0.0, 0.0, 0.0)
         ));
         lettersArray.push(new Letter('W', 0xe6e6e6, 16, 10,
-            new Vector3(0.4, -0.4, 0.0), new Vector3(4.0, 10.0, -28.0), new Vector3(0.0, 0.0, 0.0)
+            new Vector3(0.4, -0.4, 0.0), new Vector3(5.0, 10.0, -30.0), new Vector3(0.0, 0.0, 0.0)
         ));
         lettersArray.push(new Letter('E', 0xe6e6e6, 16, 10,
-            new Vector3(0.4, -0.6, 0.0), new Vector3(18.0, 0.0, -15.0), new Vector3(0.0, 0.0, 0.0)
+            new Vector3(0.4, -0.6, 0.0), new Vector3(18.0, 0.0, -16.0), new Vector3(0.0, 0.0, 0.0)
         ));
         lettersArray.push(new Letter('R', 0xe6e6e6, 16, 10,
-            new Vector3(-0.5, -0.6, 0.0), new Vector3(-4.0, -5.0, 0.0), new Vector3(0.0, 0.0, 0.0)
+            new Vector3(-0.5, -0.6, 0.0), new Vector3(-4.0, -5.0, -5.0), new Vector3(0.0, 0.0, 0.0)
         ));
         lettersArray.push(new Letter('T', 0xe6e6e6, 16, 10,
             new Vector3(0.1, 0.25, 0.0), new Vector3(8.0, -16.0, 5.0), new Vector3(0.0, 0.0, 0.0)
@@ -91,8 +122,8 @@ class App {
             new Vector3(0.2, 0.0, 0.0), new Vector3(0.0, -20.0, 10.0), new Vector3(0.0, 0.0, 0.0)
         ));
 
-        //frame
-        const roundedRectShape = new THREE.Shape();
+        //gen frame points
+        const roundedRectShape = new Shape();
         (function roundedRect(ctx, x, y, width, height, radius) {
 
             ctx.moveTo(x, y + radius);
@@ -106,9 +137,7 @@ class App {
             ctx.quadraticCurveTo(x, y, x, y + radius);
 
         })(roundedRectShape, 0, 0, 14, 14, 1);
-
-        const roundedRectShapePoints = roundedRectShape.getPoints();
-        let FramePoints = [];
+        const roundedRectShapePoints = roundedRectShape.getPoints();        
         
         roundedRectShapePoints.forEach(element => {
             FramePoints.push(element.x);
@@ -116,26 +145,22 @@ class App {
             FramePoints.push(0);
         });
 
-        const lineGeometry = new LineGeometry();
-        lineGeometry.setPositions( FramePoints );
-        let matLine = new LineMaterial( {
-            color: 0xfbfbfb,
-            linewidth: .002, // in pixels
-            vertexColors: false,
-            dashed: false,
-        } );
-        let frame = new Line2(lineGeometry, matLine);
-        frame.computeLineDistances();
-		frame.scale.set( 1, 1, 1 );
-        frame.position.set(0, 0, 10);
-        //scene.add(frame);
+        //frames
+        frames.push(new Frame('frame1', 0xfafafa, 0.002, 
+            new Vector3(0.3, 0.0, 0.5), new Vector3(5.0, -16.0, 0.0), new Vector3(0.0, 0.0, 0.0)
+        ));
+        frames.push(new Frame('frame2', 0xfafafa, 0.002, 
+            new Vector3(0.0, -0.5, -0.1), new Vector3(11.0, -2.0, -8.0), new Vector3(0.0, 0.0, 0.0)
+        ));
+        frames.push(new Frame('frame3', 0xfafafa, 0.002, 
+            new Vector3(0.0, -0.5, 0.5), new Vector3(2.0, 1.0, -12.0), new Vector3(0.0, 0.0, 0.0)
+        ));        
 
         //plane
-        const planeGeometry = new THREE.PlaneGeometry( 100, 150 );
-        //const planeMaterial = new THREE.MeshLambertMaterial( {color: 0xffffff} );
-        const planeMaterial = new THREE.ShadowMaterial();
+        const planeGeometry = new PlaneGeometry( 100, 150 );
+        const planeMaterial = new ShadowMaterial();
         planeMaterial.opacity = 0.01;
-        let plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        let plane = new Mesh(planeGeometry, planeMaterial);
         plane.rotation.set(-Math.PI * 30.0 / 180.0, 0.0, 0.0);
         plane.receiveShadow = true;
         scene.add( plane );
@@ -143,7 +168,7 @@ class App {
         renderer = new WebGLRenderer({ canvas: canvas, antialias: true });
         renderer.setClearColor(0xffffff);
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+        //renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         renderer.render(scene, camera);
         //window.addEventListener('resize', onWindowResize, false);
@@ -156,7 +181,7 @@ class App {
 }
 
 function onMouseMove(e) {    
-     let w = document.documentElement.clientWidth;
+    let w = document.documentElement.clientWidth;
     let h = document.documentElement.clientHeight;
     let wk = 1 * (e.x - w * 0.5) / w;
     let hk = 1 * (e.y - h * 0.5) / h;
@@ -203,29 +228,6 @@ function onScroll(e) {
         element.mesh.position.y = element.startPosition.y + element.moveDirection.y * scrollMoveKoeff;
         element.mesh.position.z = element.startPosition.z + element.moveDirection.z * scrollMoveKoeff;
     });
-}
-
-function createBoxWithRoundedEdges(width, height, depth, radius0, smoothness) {
-    let shape = new Shape();
-    let eps = 0.000001;
-    let radius = radius0 - eps;
-    shape.absarc(eps, eps, eps, -Math.PI / 2, -Math.PI, true);
-    shape.absarc(eps, height - radius * 2, eps, Math.PI, Math.PI / 2, true);
-    shape.absarc(width - radius * 2, height - radius * 2, eps, Math.PI / 2, 0, true);
-    shape.absarc(width - radius * 2, eps, eps, 0, -Math.PI / 2, true);
-    let geometry = new ExtrudeGeometry(shape, {
-        amount: depth - radius0 * 2,
-        bevelEnabled: true,
-        bevelSegments: smoothness * 2,
-        steps: 1,
-        bevelSize: radius,
-        bevelThickness: radius0,
-        curveSegments: smoothness
-    });
-
-    geometry.center();
-
-    return geometry;
 }
 
 export default App;
