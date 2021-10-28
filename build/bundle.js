@@ -79968,8 +79968,8 @@ void main() {
 	//import * as THREE from 'three';
 
 	//scene
-	let canvas, camera, scene, light, light2, renderer;
-	let lettersArray = [];
+	let canvas, camera, scene, light, light2, renderer, 
+	    cameraZPos = 90;let lettersArray = [];
 	let FramePoints = [];
 	let frames = [];
 
@@ -80036,13 +80036,13 @@ void main() {
 	        canvas = document.getElementById('main3DCanvas');
 	        canvas.width = document.documentElement.clientWidth;
 	        canvas.height = document.documentElement.clientHeight;
-	        canvas.setAttribute('width', window.innerWidth);
-	        canvas.setAttribute('height', window.innerHeight);
+	        canvas.setAttribute('width', 400);
+	        canvas.setAttribute('height', 500);
 
 	        //scene and camera
 	        scene = new Scene$1();
 	        camera = new PerspectiveCamera$1(40.0, canvas.width / canvas.height, 0.1, 5000);
-	        camera.position.set(0, 0, 100);
+	        camera.position.set(10, 0, cameraZPos);
 
 	        //lights
 	        light = new PointLight$1(0xffffff, 0.2);
@@ -80116,29 +80116,26 @@ void main() {
 	        plane.receiveShadow = true;
 	        scene.add( plane );
 	        
-	        renderer = new WebGLRenderer$1({ canvas: canvas, antialias: true });
-	        renderer.setClearColor(0xffffff);
+	        renderer = new WebGLRenderer$1({ canvas: canvas, antialias: true, alpha: true });
+	        renderer.setClearColor(0xffffff, 0);
 	        renderer.shadowMap.enabled = true;
-	        //renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 	        renderer.render(scene, camera);
 	        //window.addEventListener('resize', onWindowResize, false);
 	        //onWindowResize();
-	        window.addEventListener('mousemove', onMouseMove, false);
+	        canvas.addEventListener('mousemove', onMouseMove, false);
 	        //window.addEventListener('scroll', onScroll, false);
-
 	        animate();
 	    }
 	}
 
 	function onMouseMove(e) {    
-	    let w = document.documentElement.clientWidth;
-	    let h = document.documentElement.clientHeight;
+	    let w = canvas.width;
+	    let h = canvas.height;
 	    let wk = 1 * (e.x - w * 0.5) / w;
 	    let hk = 1 * (e.y - h * 0.5) / h;
 	    lettersArray.forEach(element => {
-	        camera.position.set(10.0 * wk, 0.0 * hk, 100);
-	        camera.lookAt(0, 0, 0);
+	        camera.position.set(10 + 2.0 * wk, 0.0 * hk, cameraZPos);
 	        scene.getObjectByName(element.name).rotation.x = element.startAngle.x + 0.2 * hk;
 	        scene.getObjectByName(element.name).rotation.y = element.startAngle.y + 0.3 * wk;
 	        scene.getObjectByName(element.name).position.z = element.startPosition.z - 3.0 * hk;

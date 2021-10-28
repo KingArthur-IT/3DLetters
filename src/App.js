@@ -17,7 +17,8 @@ import { PlaneGeometry } from 'three/src/geometries/PlaneGeometry.js';
 import { ShadowMaterial } from 'three/src/materials/ShadowMaterial.js';
 
 //scene
-let canvas, camera, scene, light, light2, renderer;
+let canvas, camera, scene, light, light2, renderer, 
+    cameraZPos = 90;;
 let lettersArray = [];
 let FramePoints = [];
 let frames = [];
@@ -85,13 +86,13 @@ class App {
         canvas = document.getElementById('main3DCanvas');
         canvas.width = document.documentElement.clientWidth;
         canvas.height = document.documentElement.clientHeight;
-        canvas.setAttribute('width', window.innerWidth);
-        canvas.setAttribute('height', window.innerHeight);
+        canvas.setAttribute('width', 400);
+        canvas.setAttribute('height', 500);
 
         //scene and camera
         scene = new Scene();
         camera = new PerspectiveCamera(40.0, canvas.width / canvas.height, 0.1, 5000);
-        camera.position.set(0, 0, 100);
+        camera.position.set(10, 0, cameraZPos);
 
         //lights
         light = new PointLight(0xffffff, 0.2);
@@ -165,29 +166,26 @@ class App {
         plane.receiveShadow = true;
         scene.add( plane );
         
-        renderer = new WebGLRenderer({ canvas: canvas, antialias: true });
-        renderer.setClearColor(0xffffff);
+        renderer = new WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+        renderer.setClearColor(0xffffff, 0);
         renderer.shadowMap.enabled = true;
-        //renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         renderer.render(scene, camera);
         //window.addEventListener('resize', onWindowResize, false);
         //onWindowResize();
-        window.addEventListener('mousemove', onMouseMove, false);
+        canvas.addEventListener('mousemove', onMouseMove, false);
         //window.addEventListener('scroll', onScroll, false);
-
         animate();
     }
 }
 
 function onMouseMove(e) {    
-    let w = document.documentElement.clientWidth;
-    let h = document.documentElement.clientHeight;
+    let w = canvas.width;
+    let h = canvas.height;
     let wk = 1 * (e.x - w * 0.5) / w;
     let hk = 1 * (e.y - h * 0.5) / h;
     lettersArray.forEach(element => {
-        camera.position.set(10.0 * wk, 0.0 * hk, 100)
-        camera.lookAt(0, 0, 0)
+        camera.position.set(10 + 2.0 * wk, 0.0 * hk, cameraZPos)
         scene.getObjectByName(element.name).rotation.x = element.startAngle.x + 0.2 * hk;
         scene.getObjectByName(element.name).rotation.y = element.startAngle.y + 0.3 * wk;
         scene.getObjectByName(element.name).position.z = element.startPosition.z - 3.0 * hk;
@@ -204,30 +202,18 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
 
     renderer.setSize(document.documentElement.clientWidth, document.documentElement.clientHeight);
-
-    let size = document.documentElement.clientWidth < 500 ? document.documentElement.clientWidth < 400 ? 160 : 120 : 100
-
-    objectsArray.forEach(element => {
-        //element.mesh.scale.copy( new Vector3(size, size, size));
-        element.mesh.position.copy(element.startPosition);
-    });
-
+    
+    let size = document.documentElement.clientWidth < 800 ? document.documentElement.clientWidth < 500 ? 180 : 150 : 120
     camera.position.set(0, 0, size);
+
+    if (document.documentElement.clientWidth < 400) {
+        camera.position.set(10, 0, 200);
+    }    
 }
 
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
-}
-
-function onScroll(e) {
-    let distanceToTop = canvas.getBoundingClientRect().top;
-    let scrollMoveKoeff = -100.0 * (distanceToTop / canvas.height);
-    objectsArray.forEach(element => {
-        element.mesh.position.x = element.startPosition.x + element.moveDirection.x * scrollMoveKoeff;
-        element.mesh.position.y = element.startPosition.y + element.moveDirection.y * scrollMoveKoeff;
-        element.mesh.position.z = element.startPosition.z + element.moveDirection.z * scrollMoveKoeff;
-    });
 }
 
 export default App;
