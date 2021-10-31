@@ -11,12 +11,23 @@
             padding: 0;
         }
         body{
-            background-color: #ccc;
+            background-color: #fff;
+        }
+        .canvas-wrapper{
+            width: 80%;
+            margin: auto;
+            height: 900px;
+            border: 1px solid red;
         }
     </style>
 </head>
 <body>
+    <div style="height: 500px;"></div>
     <canvas id="main3DCanvas"></canvas>
+    <div class="canvas-wrapper">
+        <canvas id="scrolling3DCanvas"></canvas>
+    </div>
+    <div style="height: 1000px;"></div>
     <script src="./build/bundle.js"></script>
 </body>
 </html>
