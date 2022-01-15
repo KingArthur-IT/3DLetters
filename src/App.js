@@ -110,7 +110,7 @@ class App {
         light[1].position.set(0, 100, 100);
         scene[0].add(light[0]); scene[0].add(light[1]);
 
-        light.push(new PointLight(0xffffff, 0.2), new AmbientLight(0xffffff, 0.85));
+        light.push(new PointLight(0xffffff, 0.35), new AmbientLight(0xffffff, 0.85));
         light[2].position.set(0, 50, 40); light[2].castShadow = true;
         light[3].position.set(0, 100, 100);
         scene[1].add(light[2]); scene[1].add(light[3]);
